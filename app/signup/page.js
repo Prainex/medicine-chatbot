@@ -1,9 +1,9 @@
 "use client";
-// pages/signup.js
-import React, { useState } from 'react';
-import { auth, db } from '../firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+// pages/signup.js or app/signup/page.js
+import React, { useState } from "react";
+import { auth, db } from "../firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import {
   Container,
   TextField,
@@ -13,35 +13,85 @@ import {
   Select,
   MenuItem,
   Typography,
+  List,
+  ListItem,
+  IconButton,
   AppBar,
   Toolbar,
-} from '@mui/material';
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import { useRouter } from 'next/navigation';
+  ButtonBase,
+  Box,
+  Card,
+  CardContent,
+  Snackbar,
+  Alert,
+  InputAdornment,
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { useRouter } from "next/navigation";
 
 export default function SignUp() {
-  const [accountType, setAccountType] = useState('user');
+  const [accountType, setAccountType] = useState("patient");
+  const [medications, setMedications] = useState([]);
+  const [medicalHistory, setMedicalHistory] = useState([]);
+  const [allergies, setAllergies] = useState([]);
+  const [newMedication, setNewMedication] = useState("");
+  const [newMedicalIssue, setNewMedicalIssue] = useState("");
+  const [newAllergy, setNewAllergy] = useState("");
   const router = useRouter();
+
+  // Snackbar State
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success", // 'success' | 'error' | 'warning' | 'info'
+  });
+
+  // Add and remove handlers
+  const handleAddItem = (item, setItem, listSetter, list) => {
+    if (item.trim()) {
+      listSetter([...list, item.trim()]);
+      setItem("");
+    }
+  };
+
+  const handleRemoveItem = (index, listSetter, list) => {
+    const updatedList = [...list];
+    updatedList.splice(index, 1);
+    listSetter(updatedList);
+  };
 
   const formik = useFormik({
     initialValues: {
-      email: '',
-      password: '',
-      gender: '',
-      age: '',
-      medications: '',
-      medicalHistory: '',
-      allergies: '',
-      credentials: '',
+      email: "",
+      password: "",
+      confirmPassword: "",
+      gender: "",
+      dateOfBirth: "",
+      medicalLicenseNumber: "",
+      state: "",
+      specialization: "", // New field for specialization
     },
     validationSchema: Yup.object({
-      email: Yup.string().email('Invalid email').required('Required'),
-      password: Yup.string().min(6).required('Required'),
-      gender: Yup.string().required('Required'),
-      age: Yup.number().min(0).required('Required'),
-      ...(accountType === 'doctor' && {
-        credentials: Yup.string().required('Credentials are required'),
+      email: Yup.string().email("Invalid email").required("Required"),
+      password: Yup.string()
+        .min(6, "Password must be at least 6 characters")
+        .required("Required"),
+      confirmPassword: Yup.string()
+        .oneOf([Yup.ref("password"), null], "Passwords must match")
+        .required("Required"),
+      gender: Yup.string().required("Required"),
+      dateOfBirth: Yup.date().required("Required"),
+      ...(accountType === "doctor" && {
+        medicalLicenseNumber: Yup.string().required(
+          "Medical License Number is required"
+        ),
+        state: Yup.string().required("State is required"),
+        specialization: Yup.string().required(
+          "Specialization is required"
+        ), // Validation for specialization
       }),
     }),
     onSubmit: async (values) => {
@@ -56,49 +106,54 @@ export default function SignUp() {
         const userData = {
           accountType,
           gender: values.gender,
-          age: values.age,
+          dateOfBirth: values.dateOfBirth,
         };
 
-        if (accountType === 'user') {
-          userData.medications = values.medications;
-          userData.medicalHistory = values.medicalHistory;
-          userData.allergies = values.allergies;
-        } else if (accountType === 'doctor') {
-          userData.credentials = values.credentials;
-          userData.verified = false; // Will be manually verified
+        if (accountType === "patient") {
+          userData.medications = medications;
+          userData.medicalHistory = medicalHistory;
+          userData.allergies = allergies;
+        } else if (accountType === "doctor") {
+          userData.medicalLicenseNumber = values.medicalLicenseNumber;
+          userData.state = values.state;
+          userData.specialization = values.specialization; // Store specialization in Firestore
+          userData.verified = false; // Mark doctor as pending verification
         }
 
-        await setDoc(doc(db, 'users', userId), userData);
+        await setDoc(doc(db, "users", userId), userData);
 
-        alert('Account created successfully!');
-        // Redirect based on account type
-        if (accountType === 'user') {
-          router.push('/user/dashboard');
-        } else if (accountType === 'doctor') {
-          alert('Your account is pending verification.');
-          router.push('/login');
-        }
+        setSnackbar({
+          open: true,
+          message: "Account created successfully!",
+          severity: "success",
+        });
+
+        // Redirect based on account type after a short delay to allow Snackbar to display
+        setTimeout(() => {
+          if (accountType === "patient") {
+            router.push("/user/dashboard");
+          } else if (accountType === "doctor") {
+            setSnackbar({
+              open: true,
+              message: "Your account is pending verification.",
+              severity: "info",
+            });
+            router.push("/login");
+          }
+        }, 1500);
       } catch (error) {
-        console.error('Error signing up:', error);
-        alert('Error signing up: ' + error.message);
+        console.error("Error signing up:", error);
+        setSnackbar({
+          open: true,
+          message: "Error signing up: " + error.message,
+          severity: "error",
+        });
       }
     },
   });
 
   return (
-    <>
-    <AppBar position="static">
-    <Toolbar>
-      <Typography variant="h6">Telemedicine App</Typography>
-      <Button color="inherit" onClick={() => router.push('/login')}>
-        Login
-      </Button>
-      <Button color="inherit" onClick={() => router.push('/signup')}>
-        Sign Up
-      </Button>
-    </Toolbar>
-  </AppBar>
-    <Container maxWidth="sm" sx={{backgroundColor: 'white'}}>
+    <Container maxWidth="sm">
       <Typography variant="h4" gutterBottom>
         Sign Up
       </Typography>
@@ -209,6 +264,5 @@ export default function SignUp() {
         </Button>
       </form>
     </Container>
-    </>
   );
 }
