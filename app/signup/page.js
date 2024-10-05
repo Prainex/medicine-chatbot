@@ -1,5 +1,5 @@
 "use client";
-// pages/signup.js
+// pages/signup.js or app/signup/page.js
 import React, { useState } from "react";
 import { auth, db } from "../firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -22,6 +22,8 @@ import {
   Box,
   Card,
   CardContent,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -38,6 +40,13 @@ export default function SignUp() {
   const [newMedicalIssue, setNewMedicalIssue] = useState("");
   const [newAllergy, setNewAllergy] = useState("");
   const router = useRouter();
+
+  // Snackbar State
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success", // 'success' | 'error' | 'warning' | 'info'
+  });
 
   // Add and remove handlers
   const handleAddItem = (item, setItem, listSetter, list) => {
@@ -66,21 +75,31 @@ export default function SignUp() {
     },
     validationSchema: Yup.object({
       email: Yup.string().email("Invalid email").required("Required"),
-      password: Yup.string().min(6, "Password must be at least 6 characters").required("Required"),
+      password: Yup.string()
+        .min(6, "Password must be at least 6 characters")
+        .required("Required"),
       confirmPassword: Yup.string()
         .oneOf([Yup.ref("password"), null], "Passwords must match")
         .required("Required"),
       gender: Yup.string().required("Required"),
       dateOfBirth: Yup.date().required("Required"),
       ...(accountType === "doctor" && {
-        medicalLicenseNumber: Yup.string().required("Medical License Number is required"),
+        medicalLicenseNumber: Yup.string().required(
+          "Medical License Number is required"
+        ),
         state: Yup.string().required("State is required"),
-        specialization: Yup.string().required("Specialization is required"), // Validation for specialization
+        specialization: Yup.string().required(
+          "Specialization is required"
+        ), // Validation for specialization
       }),
     }),
     onSubmit: async (values) => {
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          values.email,
+          values.password
+        );
         const userId = userCredential.user.uid;
 
         const userData = {
@@ -102,30 +121,56 @@ export default function SignUp() {
 
         await setDoc(doc(db, "users", userId), userData);
 
-        alert("Account created successfully!");
-        // Redirect based on account type
-        if (accountType === "patient") {
-          router.push("/user/dashboard");
-        } else if (accountType === "doctor") {
-          alert("Your account is pending verification.");
-          router.push("/login");
-        }
+        setSnackbar({
+          open: true,
+          message: "Account created successfully!",
+          severity: "success",
+        });
+
+        // Redirect based on account type after a short delay to allow Snackbar to display
+        setTimeout(() => {
+          if (accountType === "patient") {
+            router.push("/user/dashboard");
+          } else if (accountType === "doctor") {
+            setSnackbar({
+              open: true,
+              message: "Your account is pending verification.",
+              severity: "info",
+            });
+            router.push("/login");
+          }
+        }, 1500);
       } catch (error) {
         console.error("Error signing up:", error);
-        alert("Error signing up: " + error.message);
+        setSnackbar({
+          open: true,
+          message: "Error signing up: " + error.message,
+          severity: "error",
+        });
       }
     },
   });
 
   return (
     <>
-      <AppBar position="static" sx={{ backgroundColor: "#1976d2" }}>
+      {/* AppBar */}
+      <AppBar position="static" sx={{ backgroundColor: "primary.main" }}>
         <Toolbar>
-          <ButtonBase onClick={() => router.push('/')} >
+          {/* App Name Button on the Top Left */}
+          <ButtonBase
+            onClick={() => router.push("/")}
+            sx={{ display: "flex", alignItems: "center" }}
+            aria-label="Go to home page"
+          >
             <Typography variant="h6" sx={{ color: "#fff" }}>
               Telemedicine App
             </Typography>
           </ButtonBase>
+
+          {/* Spacer to push the following buttons to the right */}
+          <Box sx={{ flexGrow: 1 }} />
+
+          {/* Login and Sign Up Buttons on the Top Right */}
           <Button
             color="inherit"
             onClick={() => router.push("/login")}
@@ -135,6 +180,7 @@ export default function SignUp() {
                 transform: "scale(1.05)",
               },
             }}
+            aria-label="Login"
           >
             Login
           </Button>
@@ -147,46 +193,63 @@ export default function SignUp() {
                 transform: "scale(1.05)",
               },
             }}
+            aria-label="Sign Up"
           >
             Sign Up
           </Button>
         </Toolbar>
       </AppBar>
+
+      {/* Main Container */}
       <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
         <Card elevation={6} sx={{ padding: 3, borderRadius: 2 }}>
           <CardContent>
-            <Typography variant="h4" gutterBottom align="center" sx={{ mb: 3 }}>
+            {/* Header */}
+            <Typography
+              variant="h4"
+              gutterBottom
+              align="center"
+              sx={{ mb: 3 }}
+            >
               Create Your Account
             </Typography>
+
+            {/* Account Type Selection */}
             <FormControl fullWidth margin="normal">
-              <InputLabel>Account Type</InputLabel>
+              <InputLabel id="account-type-label">Account Type</InputLabel>
               <Select
+                labelId="account-type-label"
+                id="account-type"
                 value={accountType}
                 onChange={(e) => setAccountType(e.target.value)}
                 label="Account Type"
                 sx={{ borderRadius: 1 }}
+                aria-label="Account Type"
               >
                 <MenuItem value="patient">Patient</MenuItem>
                 <MenuItem value="doctor">Doctor</MenuItem>
               </Select>
             </FormControl>
-            <form onSubmit={formik.handleSubmit}>
+
+            {/* Sign-Up Form */}
+            <form onSubmit={formik.handleSubmit} noValidate>
+              {/* Email Field */}
               <TextField
                 fullWidth
                 margin="normal"
                 label="Email"
                 name="email"
                 variant="outlined"
+                type="email"
                 value={formik.values.email}
                 onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 error={formik.touched.email && Boolean(formik.errors.email)}
                 helperText={formik.touched.email && formik.errors.email}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 1,
-                  },
-                }}
+                aria-label="Email"
               />
+
+              {/* Password Field */}
               <TextField
                 fullWidth
                 margin="normal"
@@ -196,14 +259,15 @@ export default function SignUp() {
                 variant="outlined"
                 value={formik.values.password}
                 onChange={formik.handleChange}
-                error={formik.touched.password && Boolean(formik.errors.password)}
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.password && Boolean(formik.errors.password)
+                }
                 helperText={formik.touched.password && formik.errors.password}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 1,
-                  },
-                }}
+                aria-label="Password"
               />
+
+              {/* Confirm Password Field */}
               <TextField
                 fullWidth
                 margin="normal"
@@ -213,29 +277,40 @@ export default function SignUp() {
                 variant="outlined"
                 value={formik.values.confirmPassword}
                 onChange={formik.handleChange}
-                error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
-                helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 1,
-                  },
-                }}
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.confirmPassword &&
+                  Boolean(formik.errors.confirmPassword)
+                }
+                helperText={
+                  formik.touched.confirmPassword &&
+                  formik.errors.confirmPassword
+                }
+                aria-label="Confirm Password"
               />
+
+              {/* Gender Selection */}
               <FormControl fullWidth margin="normal">
-                <InputLabel>Gender</InputLabel>
+                <InputLabel id="gender-label">Gender</InputLabel>
                 <Select
+                  labelId="gender-label"
+                  id="gender"
                   name="gender"
                   value={formik.values.gender}
                   onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   error={formik.touched.gender && Boolean(formik.errors.gender)}
                   label="Gender"
                   sx={{ borderRadius: 1 }}
+                  aria-label="Gender"
                 >
                   <MenuItem value="Male">Male</MenuItem>
                   <MenuItem value="Female">Female</MenuItem>
                   <MenuItem value="Other">Other</MenuItem>
                 </Select>
               </FormControl>
+
+              {/* Date of Birth Field */}
               <TextField
                 fullWidth
                 margin="normal"
@@ -245,23 +320,34 @@ export default function SignUp() {
                 variant="outlined"
                 value={formik.values.dateOfBirth}
                 onChange={formik.handleChange}
-                error={formik.touched.dateOfBirth && Boolean(formik.errors.dateOfBirth)}
-                helperText={formik.touched.dateOfBirth && formik.errors.dateOfBirth}
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.dateOfBirth &&
+                  Boolean(formik.errors.dateOfBirth)
+                }
+                helperText={
+                  formik.touched.dateOfBirth && formik.errors.dateOfBirth
+                }
                 InputLabelProps={{ shrink: true }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 1,
-                  },
-                }}
+                aria-label="Date of Birth"
               />
+
+              {/* Conditional Fields for Patient */}
               {accountType === "patient" && (
                 <>
-                  {/* Add Medications */}
-                  <Box sx={{ mt: 2 }}>
+                  {/* Medications Section */}
+                  <Box sx={{ mt: 3 }}>
                     <Typography variant="h6" gutterBottom>
                       Medications
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        flexWrap: "wrap",
+                      }}
+                    >
                       <TextField
                         fullWidth
                         label="Add Medication"
@@ -273,18 +359,28 @@ export default function SignUp() {
                             borderRadius: 1,
                           },
                         }}
+                        aria-label="Add Medication"
                       />
                       <Button
                         variant="contained"
                         color="primary"
-                        onClick={() => handleAddItem(newMedication, setNewMedication, setMedications, medications)}
+                        onClick={() =>
+                          handleAddItem(
+                            newMedication,
+                            setNewMedication,
+                            setMedications,
+                            medications
+                          )
+                        }
                         startIcon={<AddIcon />}
                         sx={{
                           transition: "transform 0.2s",
                           "&:hover": {
                             transform: "scale(1.05)",
                           },
+                          whiteSpace: "nowrap",
                         }}
+                        aria-label="Add Medication Button"
                       >
                         Add
                       </Button>
@@ -294,7 +390,17 @@ export default function SignUp() {
                         <ListItem
                           key={index}
                           secondaryAction={
-                            <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveItem(index, setMedications, medications)}>
+                            <IconButton
+                              edge="end"
+                              aria-label={`Delete ${medication}`}
+                              onClick={() =>
+                                handleRemoveItem(
+                                  index,
+                                  setMedications,
+                                  medications
+                                )
+                              }
+                            >
                               <DeleteIcon />
                             </IconButton>
                           }
@@ -306,12 +412,19 @@ export default function SignUp() {
                     </List>
                   </Box>
 
-                  {/* Add Medical History */}
+                  {/* Medical History Section */}
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="h6" gutterBottom>
                       Medical History
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        flexWrap: "wrap",
+                      }}
+                    >
                       <TextField
                         fullWidth
                         label="Add Medical Condition"
@@ -323,18 +436,28 @@ export default function SignUp() {
                             borderRadius: 1,
                           },
                         }}
+                        aria-label="Add Medical Condition"
                       />
                       <Button
                         variant="contained"
                         color="primary"
-                        onClick={() => handleAddItem(newMedicalIssue, setNewMedicalIssue, setMedicalHistory, medicalHistory)}
+                        onClick={() =>
+                          handleAddItem(
+                            newMedicalIssue,
+                            setNewMedicalIssue,
+                            setMedicalHistory,
+                            medicalHistory
+                          )
+                        }
                         startIcon={<AddIcon />}
                         sx={{
                           transition: "transform 0.2s",
                           "&:hover": {
                             transform: "scale(1.05)",
                           },
+                          whiteSpace: "nowrap",
                         }}
+                        aria-label="Add Medical Condition Button"
                       >
                         Add
                       </Button>
@@ -344,7 +467,17 @@ export default function SignUp() {
                         <ListItem
                           key={index}
                           secondaryAction={
-                            <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveItem(index, setMedicalHistory, medicalHistory)}>
+                            <IconButton
+                              edge="end"
+                              aria-label={`Delete ${issue}`}
+                              onClick={() =>
+                                handleRemoveItem(
+                                  index,
+                                  setMedicalHistory,
+                                  medicalHistory
+                                )
+                              }
+                            >
                               <DeleteIcon />
                             </IconButton>
                           }
@@ -356,12 +489,19 @@ export default function SignUp() {
                     </List>
                   </Box>
 
-                  {/* Add Allergies */}
+                  {/* Allergies Section */}
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="h6" gutterBottom>
                       Allergies
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        flexWrap: "wrap",
+                      }}
+                    >
                       <TextField
                         fullWidth
                         label="Add Allergy"
@@ -373,18 +513,28 @@ export default function SignUp() {
                             borderRadius: 1,
                           },
                         }}
+                        aria-label="Add Allergy"
                       />
                       <Button
                         variant="contained"
                         color="primary"
-                        onClick={() => handleAddItem(newAllergy, setNewAllergy, setAllergies, allergies)}
+                        onClick={() =>
+                          handleAddItem(
+                            newAllergy,
+                            setNewAllergy,
+                            setAllergies,
+                            allergies
+                          )
+                        }
                         startIcon={<AddIcon />}
                         sx={{
                           transition: "transform 0.2s",
                           "&:hover": {
                             transform: "scale(1.05)",
                           },
+                          whiteSpace: "nowrap",
                         }}
+                        aria-label="Add Allergy Button"
                       >
                         Add
                       </Button>
@@ -394,7 +544,17 @@ export default function SignUp() {
                         <ListItem
                           key={index}
                           secondaryAction={
-                            <IconButton edge="end" aria-label="delete" onClick={() => handleRemoveItem(index, setAllergies, allergies)}>
+                            <IconButton
+                              edge="end"
+                              aria-label={`Delete ${allergy}`}
+                              onClick={() =>
+                                handleRemoveItem(
+                                  index,
+                                  setAllergies,
+                                  allergies
+                                )
+                              }
+                            >
                               <DeleteIcon />
                             </IconButton>
                           }
@@ -407,8 +567,11 @@ export default function SignUp() {
                   </Box>
                 </>
               )}
+
+              {/* Conditional Fields for Doctor */}
               {accountType === "doctor" && (
                 <>
+                  {/* Medical License Number Field */}
                   <TextField
                     fullWidth
                     margin="normal"
@@ -417,52 +580,79 @@ export default function SignUp() {
                     variant="outlined"
                     value={formik.values.medicalLicenseNumber}
                     onChange={formik.handleChange}
-                    error={formik.touched.medicalLicenseNumber && Boolean(formik.errors.medicalLicenseNumber)}
-                    helperText={formik.touched.medicalLicenseNumber && formik.errors.medicalLicenseNumber}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 1,
-                      },
-                    }}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.medicalLicenseNumber &&
+                      Boolean(formik.errors.medicalLicenseNumber)
+                    }
+                    helperText={
+                      formik.touched.medicalLicenseNumber &&
+                      formik.errors.medicalLicenseNumber
+                    }
+                    aria-label="Medical License Number"
                   />
+
+                  {/* State Selection */}
                   <FormControl fullWidth margin="normal">
-                    <InputLabel>State</InputLabel>
+                    <InputLabel id="state-label">State</InputLabel>
                     <Select
+                      labelId="state-label"
+                      id="state"
                       name="state"
                       value={formik.values.state}
                       onChange={formik.handleChange}
-                      error={formik.touched.state && Boolean(formik.errors.state)}
+                      onBlur={formik.handleBlur}
+                      error={
+                        formik.touched.state && Boolean(formik.errors.state)
+                      }
                       label="State"
                       sx={{ borderRadius: 1 }}
+                      aria-label="State"
                     >
-                      {/* Add state options */}
+                      {/* Add state options as needed */}
                       <MenuItem value="CA">California</MenuItem>
                       <MenuItem value="NY">New York</MenuItem>
                       <MenuItem value="TX">Texas</MenuItem>
-                      {/* Add more states as needed */}
+                      <MenuItem value="FL">Florida</MenuItem>
+                      <MenuItem value="IL">Illinois</MenuItem>
+                      {/* ...other states */}
                     </Select>
                   </FormControl>
+
+                  {/* Specialization Selection */}
                   <FormControl fullWidth margin="normal">
-                    <InputLabel>Specialization</InputLabel>
+                    <InputLabel id="specialization-label">
+                      Specialization
+                    </InputLabel>
                     <Select
+                      labelId="specialization-label"
+                      id="specialization"
                       name="specialization"
                       value={formik.values.specialization}
                       onChange={formik.handleChange}
-                      error={formik.touched.specialization && Boolean(formik.errors.specialization)}
+                      onBlur={formik.handleBlur}
+                      error={
+                        formik.touched.specialization &&
+                        Boolean(formik.errors.specialization)
+                      }
                       label="Specialization"
                       sx={{ borderRadius: 1 }}
+                      aria-label="Specialization"
                     >
+                      {/* Add specialization options as needed */}
                       <MenuItem value="Cardiology">Cardiology</MenuItem>
                       <MenuItem value="Dermatology">Dermatology</MenuItem>
                       <MenuItem value="Neurology">Neurology</MenuItem>
                       <MenuItem value="Pediatrics">Pediatrics</MenuItem>
                       <MenuItem value="Oncology">Oncology</MenuItem>
                       <MenuItem value="Surgery">Surgery</MenuItem>
-                      {/* Add more specializations as needed */}
+                      {/* ...other specializations */}
                     </Select>
                   </FormControl>
                 </>
               )}
+
+              {/* Submit Button */}
               <Button
                 color="primary"
                 variant="contained"
@@ -477,6 +667,7 @@ export default function SignUp() {
                     transform: "scale(1.05)",
                   },
                 }}
+                aria-label="Sign Up Button"
               >
                 Sign Up
               </Button>
@@ -484,6 +675,23 @@ export default function SignUp() {
           </CardContent>
         </Card>
       </Container>
+
+      {/* Snackbar for Notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }
