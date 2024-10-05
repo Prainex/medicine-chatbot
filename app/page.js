@@ -18,9 +18,8 @@ export default function Home() {
   //Handler to close menu
   const MenuClose = () => {setAnchorEl(null);}
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-    {/* Navigation Bar */}
-      <AppBar position="static" sx ={{ backgroundColor: 'white'}}>
+    <>
+      <AppBar position="static">
         <Toolbar>
         <ButtonBase onClick={() => router.push('/')}>
               < Typography variant="h5" sx={{ flexGrow: 1, color: 'red' }}>
@@ -111,13 +110,12 @@ export default function Home() {
           Providing AI-powered medical advice and access to real doctors.
         </Typography>
         <div style={{ textAlign: 'center' }}>
-          <Button variant="contained" color="primary" onClick={() => router.push('/signup')}>
+          <Button variant="contained" color="primary" onClick={() => router.push('/chatbot')}>
             Get Started
           </Button>
         </div>
       </Container>
-      </Box>
-      </Box>
+    </>
   );
 } 
 //test
