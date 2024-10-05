@@ -1,6 +1,6 @@
 "use client";
 // app/page.js
-import { AppBar, Toolbar, Typography, Button, Container } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Container, ButtonBase } from '@mui/material';
 import { useRouter } from 'next/navigation'; // Use 'next/navigation' for routing in App Router
 
 export default function LandingPage() {
@@ -10,7 +10,11 @@ export default function LandingPage() {
     <>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6">Telemedicine App</Typography>
+        <ButtonBase onClick={() => router.push('/')}>
+            <Typography variant="h6" sx={{ flexGrow: 1 }}>
+              Telemedicine App
+            </Typography>
+          </ButtonBase>
           <Button color="inherit" onClick={() => router.push('/login')}>
             Login
           </Button>

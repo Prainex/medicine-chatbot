@@ -3,6 +3,7 @@ import React from 'react';
 import { Container, Typography, AppBar, Toolbar, Button, Box, List, ListItem, ListItemText, ButtonBase } from '@mui/material';
 import { useRouter } from 'next/navigation'; // Use 'next/navigation' for routing in App Router
 
+
 export default function PatientDashboard() {
   const chats = [
     { id: 1, name: 'Chat 1' },
