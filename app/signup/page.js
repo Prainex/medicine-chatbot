@@ -16,6 +16,9 @@ import {
   List,
   ListItem,
   IconButton,
+  AppBar,
+  Toolbar,
+  ButtonBase
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -114,6 +117,22 @@ export default function SignUp() {
   });
 
   return (
+    <>
+    <AppBar position="static">
+        <Toolbar>
+        <ButtonBase onClick={() => router.push('/')}>
+            <Typography variant="h6" sx={{ flexGrow: 1 }}>
+              Telemedicine App
+            </Typography>
+          </ButtonBase>
+          <Button color="inherit" onClick={() => router.push('/login')}>
+            Login
+          </Button>
+          <Button color="inherit" onClick={() => router.push('/signup')}>
+            Sign Up
+          </Button>
+        </Toolbar>
+      </AppBar>
     <Container maxWidth="sm">
       <Typography variant="h4" gutterBottom>
         Sign Up
@@ -315,5 +334,6 @@ export default function SignUp() {
         </Button>
       </form>
     </Container>
+    </>
   );
 }
