@@ -24,6 +24,7 @@ import {
   CardContent,
   Snackbar,
   Alert,
+  InputAdornment,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -340,51 +341,38 @@ export default function SignUp() {
                     <Typography variant="h6" gutterBottom>
                       Medications
                     </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        flexWrap: "wrap",
+                    <TextField
+                      fullWidth
+                      label="Add Medication"
+                      variant="outlined"
+                      value={newMedication}
+                      onChange={(e) => setNewMedication(e.target.value)}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() =>
+                                handleAddItem(
+                                  newMedication,
+                                  setNewMedication,
+                                  setMedications,
+                                  medications
+                                )
+                              }
+                              aria-label="Add Medication"
+                            >
+                              <AddIcon />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
                       }}
-                    >
-                      <TextField
-                        fullWidth
-                        label="Add Medication"
-                        variant="outlined"
-                        value={newMedication}
-                        onChange={(e) => setNewMedication(e.target.value)}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: 1,
-                          },
-                        }}
-                        aria-label="Add Medication"
-                      />
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() =>
-                          handleAddItem(
-                            newMedication,
-                            setNewMedication,
-                            setMedications,
-                            medications
-                          )
-                        }
-                        startIcon={<AddIcon />}
-                        sx={{
-                          transition: "transform 0.2s",
-                          "&:hover": {
-                            transform: "scale(1.05)",
-                          },
-                          whiteSpace: "nowrap",
-                        }}
-                        aria-label="Add Medication Button"
-                      >
-                        Add
-                      </Button>
-                    </Box>
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 1,
+                        },
+                      }}
+                      aria-label="Add Medication"
+                    />
                     <List>
                       {medications.map((medication, index) => (
                         <ListItem
@@ -417,51 +405,38 @@ export default function SignUp() {
                     <Typography variant="h6" gutterBottom>
                       Medical History
                     </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        flexWrap: "wrap",
+                    <TextField
+                      fullWidth
+                      label="Add Medical Condition"
+                      variant="outlined"
+                      value={newMedicalIssue}
+                      onChange={(e) => setNewMedicalIssue(e.target.value)}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() =>
+                                handleAddItem(
+                                  newMedicalIssue,
+                                  setNewMedicalIssue,
+                                  setMedicalHistory,
+                                  medicalHistory
+                                )
+                              }
+                              aria-label="Add Medical Condition"
+                            >
+                              <AddIcon />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
                       }}
-                    >
-                      <TextField
-                        fullWidth
-                        label="Add Medical Condition"
-                        variant="outlined"
-                        value={newMedicalIssue}
-                        onChange={(e) => setNewMedicalIssue(e.target.value)}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: 1,
-                          },
-                        }}
-                        aria-label="Add Medical Condition"
-                      />
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() =>
-                          handleAddItem(
-                            newMedicalIssue,
-                            setNewMedicalIssue,
-                            setMedicalHistory,
-                            medicalHistory
-                          )
-                        }
-                        startIcon={<AddIcon />}
-                        sx={{
-                          transition: "transform 0.2s",
-                          "&:hover": {
-                            transform: "scale(1.05)",
-                          },
-                          whiteSpace: "nowrap",
-                        }}
-                        aria-label="Add Medical Condition Button"
-                      >
-                        Add
-                      </Button>
-                    </Box>
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 1,
+                        },
+                      }}
+                      aria-label="Add Medical Condition"
+                    />
                     <List>
                       {medicalHistory.map((issue, index) => (
                         <ListItem
@@ -494,51 +469,38 @@ export default function SignUp() {
                     <Typography variant="h6" gutterBottom>
                       Allergies
                     </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        flexWrap: "wrap",
+                    <TextField
+                      fullWidth
+                      label="Add Allergy"
+                      variant="outlined"
+                      value={newAllergy}
+                      onChange={(e) => setNewAllergy(e.target.value)}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() =>
+                                handleAddItem(
+                                  newAllergy,
+                                  setNewAllergy,
+                                  setAllergies,
+                                  allergies
+                                )
+                              }
+                              aria-label="Add Allergy"
+                            >
+                              <AddIcon />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
                       }}
-                    >
-                      <TextField
-                        fullWidth
-                        label="Add Allergy"
-                        variant="outlined"
-                        value={newAllergy}
-                        onChange={(e) => setNewAllergy(e.target.value)}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: 1,
-                          },
-                        }}
-                        aria-label="Add Allergy"
-                      />
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() =>
-                          handleAddItem(
-                            newAllergy,
-                            setNewAllergy,
-                            setAllergies,
-                            allergies
-                          )
-                        }
-                        startIcon={<AddIcon />}
-                        sx={{
-                          transition: "transform 0.2s",
-                          "&:hover": {
-                            transform: "scale(1.05)",
-                          },
-                          whiteSpace: "nowrap",
-                        }}
-                        aria-label="Add Allergy Button"
-                      >
-                        Add
-                      </Button>
-                    </Box>
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 1,
+                        },
+                      }}
+                      aria-label="Add Allergy"
+                    />
                     <List>
                       {allergies.map((allergy, index) => (
                         <ListItem
@@ -610,12 +572,56 @@ export default function SignUp() {
                       aria-label="State"
                     >
                       {/* Add state options as needed */}
+                      <MenuItem value="AL">Alabama</MenuItem>
+                      <MenuItem value="AK">Alaska</MenuItem>
+                      <MenuItem value="AZ">Arizona</MenuItem>
+                      <MenuItem value="AR">Arkansas</MenuItem>
                       <MenuItem value="CA">California</MenuItem>
-                      <MenuItem value="NY">New York</MenuItem>
-                      <MenuItem value="TX">Texas</MenuItem>
+                      <MenuItem value="CO">Colorado</MenuItem>
+                      <MenuItem value="CT">Connecticut</MenuItem>
+                      <MenuItem value="DE">Delaware</MenuItem>
                       <MenuItem value="FL">Florida</MenuItem>
+                      <MenuItem value="GA">Georgia</MenuItem>
+                      <MenuItem value="HI">Hawaii</MenuItem>
+                      <MenuItem value="ID">Idaho</MenuItem>
                       <MenuItem value="IL">Illinois</MenuItem>
-                      {/* ...other states */}
+                      <MenuItem value="IN">Indiana</MenuItem>
+                      <MenuItem value="IA">Iowa</MenuItem>
+                      <MenuItem value="KS">Kansas</MenuItem>
+                      <MenuItem value="KY">Kentucky</MenuItem>
+                      <MenuItem value="LA">Louisiana</MenuItem>
+                      <MenuItem value="ME">Maine</MenuItem>
+                      <MenuItem value="MD">Maryland</MenuItem>
+                      <MenuItem value="MA">Massachusetts</MenuItem>
+                      <MenuItem value="MI">Michigan</MenuItem>
+                      <MenuItem value="MN">Minnesota</MenuItem>
+                      <MenuItem value="MS">Mississippi</MenuItem>
+                      <MenuItem value="MO">Missouri</MenuItem>
+                      <MenuItem value="MT">Montana</MenuItem>
+                      <MenuItem value="NE">Nebraska</MenuItem>
+                      <MenuItem value="NV">Nevada</MenuItem>
+                      <MenuItem value="NH">New Hampshire</MenuItem>
+                      <MenuItem value="NJ">New Jersey</MenuItem>
+                      <MenuItem value="NM">New Mexico</MenuItem>
+                      <MenuItem value="NY">New York</MenuItem>
+                      <MenuItem value="NC">North Carolina</MenuItem>
+                      <MenuItem value="ND">North Dakota</MenuItem>
+                      <MenuItem value="OH">Ohio</MenuItem>
+                      <MenuItem value="OK">Oklahoma</MenuItem>
+                      <MenuItem value="OR">Oregon</MenuItem>
+                      <MenuItem value="PA">Pennsylvania</MenuItem>
+                      <MenuItem value="RI">Rhode Island</MenuItem>
+                      <MenuItem value="SC">South Carolina</MenuItem>
+                      <MenuItem value="SD">South Dakota</MenuItem>
+                      <MenuItem value="TN">Tennessee</MenuItem>
+                      <MenuItem value="TX">Texas</MenuItem>
+                      <MenuItem value="UT">Utah</MenuItem>
+                      <MenuItem value="VT">Vermont</MenuItem>
+                      <MenuItem value="VA">Virginia</MenuItem>
+                      <MenuItem value="WA">Washington</MenuItem>
+                      <MenuItem value="WV">West Virginia</MenuItem>
+                      <MenuItem value="WI">Wisconsin</MenuItem>
+                      <MenuItem value="WY">Wyoming</MenuItem>
                     </Select>
                   </FormControl>
 
