@@ -13,33 +13,61 @@ import {
   Select,
   MenuItem,
   Typography,
+  List,
+  ListItem,
+  IconButton,
 } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useRouter } from 'next/navigation';
 
 export default function SignUp() {
-  const [accountType, setAccountType] = useState('user');
+  const [accountType, setAccountType] = useState('patient');
+  const [medications, setMedications] = useState([]);
+  const [medicalHistory, setMedicalHistory] = useState([]);
+  const [allergies, setAllergies] = useState([]);
+  const [newMedication, setNewMedication] = useState('');
+  const [newMedicalIssue, setNewMedicalIssue] = useState('');
+  const [newAllergy, setNewAllergy] = useState('');
   const router = useRouter();
+
+  // Add and remove handlers
+  const handleAddItem = (item, setItem, listSetter, list) => {
+    if (item) {
+      listSetter([...list, item]);
+      setItem('');
+    }
+  };
+  
+  const handleRemoveItem = (index, listSetter, list) => {
+    const updatedList = [...list];
+    updatedList.splice(index, 1);
+    listSetter(updatedList);
+  };
 
   const formik = useFormik({
     initialValues: {
       email: '',
       password: '',
+      confirmPassword: '',
       gender: '',
-      age: '',
-      medications: '',
-      medicalHistory: '',
-      allergies: '',
-      credentials: '',
+      dateOfBirth: '',
+      medicalLicenseNumber: '',
+      state: '',
+      specialization: '', // New field for specialization
     },
     validationSchema: Yup.object({
       email: Yup.string().email('Invalid email').required('Required'),
       password: Yup.string().min(6).required('Required'),
+      confirmPassword: Yup.string().oneOf([Yup.ref('password'), null], 'Passwords must match').required('Required'),
       gender: Yup.string().required('Required'),
-      age: Yup.number().min(0).required('Required'),
+      dateOfBirth: Yup.date().required('Required'),
       ...(accountType === 'doctor' && {
-        credentials: Yup.string().required('Credentials are required'),
+        medicalLicenseNumber: Yup.string().required('Medical License Number is required'),
+        state: Yup.string().required('State is required'),
+        specialization: Yup.string().required('Specialization is required'), // Validation for specialization
       }),
     }),
     onSubmit: async (values) => {
@@ -54,23 +82,25 @@ export default function SignUp() {
         const userData = {
           accountType,
           gender: values.gender,
-          age: values.age,
+          dateOfBirth: values.dateOfBirth,
         };
 
-        if (accountType === 'user') {
-          userData.medications = values.medications;
-          userData.medicalHistory = values.medicalHistory;
-          userData.allergies = values.allergies;
+        if (accountType === 'patient') {
+          userData.medications = medications;
+          userData.medicalHistory = medicalHistory;
+          userData.allergies = allergies;
         } else if (accountType === 'doctor') {
-          userData.credentials = values.credentials;
-          userData.verified = false; // Will be manually verified
+          userData.medicalLicenseNumber = values.medicalLicenseNumber;
+          userData.state = values.state;
+          userData.specialization = values.specialization; // Store specialization in Firestore
+          userData.verified = false; // Mark doctor as pending verification
         }
 
         await setDoc(doc(db, 'users', userId), userData);
 
         alert('Account created successfully!');
         // Redirect based on account type
-        if (accountType === 'user') {
+        if (accountType === 'patient') {
           router.push('/user/dashboard');
         } else if (accountType === 'doctor') {
           alert('Your account is pending verification.');
@@ -95,7 +125,7 @@ export default function SignUp() {
           onChange={(e) => setAccountType(e.target.value)}
           label="Account Type"
         >
-          <MenuItem value="user">User</MenuItem>
+          <MenuItem value="patient">Patient</MenuItem>
           <MenuItem value="doctor">Doctor</MenuItem>
         </Select>
       </FormControl>
@@ -126,69 +156,159 @@ export default function SignUp() {
         <TextField
           fullWidth
           margin="normal"
-          label="Gender"
-          name="gender"
+          label="Confirm Password"
+          name="confirmPassword"
+          type="password"
           variant="outlined"
-          value={formik.values.gender}
+          value={formik.values.confirmPassword}
           onChange={formik.handleChange}
-          error={formik.touched.gender && Boolean(formik.errors.gender)}
-          helperText={formik.touched.gender && formik.errors.gender}
+          error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
+          helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
         />
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Gender</InputLabel>
+          <Select
+            name="gender"
+            value={formik.values.gender}
+            onChange={formik.handleChange}
+            error={formik.touched.gender && Boolean(formik.errors.gender)}
+          >
+            <MenuItem value="Male">Male</MenuItem>
+            <MenuItem value="Female">Female</MenuItem>
+            <MenuItem value="Other">Other</MenuItem>
+          </Select>
+        </FormControl>
         <TextField
           fullWidth
           margin="normal"
-          label="Age"
-          name="age"
-          type="number"
+          label="Date of Birth"
+          name="dateOfBirth"
+          type="date"
           variant="outlined"
-          value={formik.values.age}
+          value={formik.values.dateOfBirth}
           onChange={formik.handleChange}
-          error={formik.touched.age && Boolean(formik.errors.age)}
-          helperText={formik.touched.age && formik.errors.age}
+          error={formik.touched.dateOfBirth && Boolean(formik.errors.dateOfBirth)}
+          helperText={formik.touched.dateOfBirth && formik.errors.dateOfBirth}
+          InputLabelProps={{ shrink: true }}
         />
-        {accountType === 'user' && (
+        {accountType === 'patient' && (
+          <>
+            {/* Add Medications */}
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Add Medication"
+              variant="outlined"
+              value={newMedication}
+              onChange={(e) => setNewMedication(e.target.value)}
+            />
+            <Button variant="contained" onClick={() => handleAddItem(newMedication, setNewMedication, setMedications, medications)} startIcon={<AddIcon />}>
+              Add Medication
+            </Button>
+            <List>
+              {medications.map((medication, index) => (
+                <ListItem key={index}>
+                  {medication}
+                  <IconButton onClick={() => handleRemoveItem(index, setMedications, medications)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItem>
+              ))}
+            </List>
+
+            {/* Add Medical History */}
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Add Medical Condition"
+              variant="outlined"
+              value={newMedicalIssue}
+              onChange={(e) => setNewMedicalIssue(e.target.value)}
+            />
+            <Button variant="contained" onClick={() => handleAddItem(newMedicalIssue, setNewMedicalIssue, setMedicalHistory, medicalHistory)} startIcon={<AddIcon />}>
+              Add Condition
+            </Button>
+            <List>
+              {medicalHistory.map((issue, index) => (
+                <ListItem key={index}>
+                  {issue}
+                  <IconButton onClick={() => handleRemoveItem(index, setMedicalHistory, medicalHistory)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItem>
+              ))}
+            </List>
+
+            {/* Add Allergies */}
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Add Allergy"
+              variant="outlined"
+              value={newAllergy}
+              onChange={(e) => setNewAllergy(e.target.value)}
+            />
+            <Button variant="contained" onClick={() => handleAddItem(newAllergy, setNewAllergy, setAllergies, allergies)} startIcon={<AddIcon />}>
+              Add Allergy
+            </Button>
+            <List>
+              {allergies.map((allergy, index) => (
+                <ListItem key={index}>
+                  {allergy}
+                  <IconButton onClick={() => handleRemoveItem(index, setAllergies, allergies)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItem>
+              ))}
+            </List>
+          </>
+        )}
+        {accountType === 'doctor' && (
           <>
             <TextField
               fullWidth
               margin="normal"
-              label="Medications"
-              name="medications"
+              label="Medical License Number"
+              name="medicalLicenseNumber"
               variant="outlined"
-              value={formik.values.medications}
+              value={formik.values.medicalLicenseNumber}
               onChange={formik.handleChange}
+              error={formik.touched.medicalLicenseNumber && Boolean(formik.errors.medicalLicenseNumber)}
+              helperText={formik.touched.medicalLicenseNumber && formik.errors.medicalLicenseNumber}
             />
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Medical History"
-              name="medicalHistory"
-              variant="outlined"
-              value={formik.values.medicalHistory}
-              onChange={formik.handleChange}
-            />
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Allergies"
-              name="allergies"
-              variant="outlined"
-              value={formik.values.allergies}
-              onChange={formik.handleChange}
-            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel>State</InputLabel>
+              <Select
+                name="state"
+                value={formik.values.state}
+                onChange={formik.handleChange}
+                error={formik.touched.state && Boolean(formik.errors.state)}
+              >
+                {/* Add state options */}
+                <MenuItem value="CA">California</MenuItem>
+                <MenuItem value="NY">New York</MenuItem>
+                <MenuItem value="TX">Texas</MenuItem>
+                {/* Add more states as needed */}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Specialization</InputLabel>
+              <Select
+                name="specialization"
+                value={formik.values.specialization}
+                onChange={formik.handleChange}
+                error={formik.touched.specialization && Boolean(formik.errors.specialization)}
+              >
+                <MenuItem value="Cardiology">Cardiology</MenuItem>
+                <MenuItem value="Dermatology">Dermatology</MenuItem>
+                <MenuItem value="Neurology">Neurology</MenuItem>
+                <MenuItem value="Pediatrics">Pediatrics</MenuItem>
+                <MenuItem value="Oncology">Oncology</MenuItem>
+                <MenuItem value="Surgery">Surgery</MenuItem>
+                {/* Add more specializations as needed */}
+              </Select>
+            </FormControl>
           </>
-        )}
-        {accountType === 'doctor' && (
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Credentials"
-            name="credentials"
-            variant="outlined"
-            value={formik.values.credentials}
-            onChange={formik.handleChange}
-            error={formik.touched.credentials && Boolean(formik.errors.credentials)}
-            helperText={formik.touched.credentials && formik.errors.credentials}
-          />
         )}
         <Button color="primary" variant="contained" fullWidth type="submit">
           Sign Up
