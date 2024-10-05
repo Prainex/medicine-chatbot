@@ -29,12 +29,28 @@ export default function Home() {
           </ButtonBase>
 
           <Button 
-          sx = {{ color : 'red', ml : 'right' }}
-          onClick={() => router.push('/login')}>
+          sx = {{ color : 'red', 
+            marginLeft : 'auto',
+            padding: '12px 24px', 
+            fontSize: '16px', 
+            minWidth: '150px', 
+            height: '50px', 
+            border: '2px solid red',
+            borderRadius: '8px',
+            marginRight: '16px'}}
+          onClick={() => router.push('/login')  }>
             Login
           </Button>
           <Button 
-          sx = {{ color : 'red' }}
+          sx = {{ color : 'red',
+            padding: '12px 24px', 
+            fontSize: '16px', 
+            minWidth: '150px', 
+            height: '50px',
+            border: '2px solid red',
+            borderRadius: '8px',
+            marginLeft: '16px',
+           }}
           onClick={() => router.push('/signup')}>
             Sign Up
           </Button>
