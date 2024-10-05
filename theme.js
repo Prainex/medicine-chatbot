@@ -7,8 +7,15 @@ const theme = createTheme({
       main: '#FF0000', // Customize as needed
     },
     secondary: {
-      main: '#dc004e', // Customize as needed
+      main: '#ae0000', // Customize as needed
     },
+
+    background: {
+        default: '#f5f5f5', // Default background (e.g., body background)
+        paper: 'rgba(255, 255, 255, 0.8)', // Light translucent background for glassmorphism
+      },
+
+
   },
   typography: {
     h4: {

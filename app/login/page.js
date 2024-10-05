@@ -1,9 +1,9 @@
 "use client";
 // pages/signin.js or app/signin/page.js
 import React, { useState } from "react";
-import { auth, db } from "../firebase"; // Ensure Firebase config is properly imported
+import { auth, db } from "../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore"; // To check user data from Firestore
+import { doc, getDoc } from "firebase/firestore";
 import {
   Container,
   TextField,
@@ -18,180 +18,238 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import { useTheme } from '@mui/material/styles'; // Import useTheme to access theme properties
 import { useRouter } from "next/navigation";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false); // To prevent multiple clicks during sign-in
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Snackbar State
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
-    severity: "success", // 'success' | 'error' | 'warning' | 'info'
+    severity: "success",
   });
 
-  // Sign In Handler
+  // Get the current theme to apply card background dynamically
+  const theme = useTheme();
+
   const handleSignIn = async () => {
-    setLoading(true); // Start loading when sign-in process starts
+    setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Fetch user data from Firestore to check their account type
       const userDoc = await getDoc(doc(db, "users", user.uid));
-
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        const accountType = userData.accountType; // Either 'patient' or 'doctor'
+        const accountType = userData.accountType;
 
-        // Display success Snackbar
         setSnackbar({
           open: true,
           message: `Signed in as ${accountType}`,
           severity: "success",
         });
 
-        // Redirect to the appropriate dashboard
         setTimeout(() => {
           if (accountType === "patient") {
             router.push("/user/dashboard");
           } else if (accountType === "doctor") {
-            router.push("/doctor/dashboard");
+            router.push("/user/doctor");
           }
         }, 1500);
       } else {
-        // User document not found in Firestore
         throw new Error("User data not found in database.");
       }
     } catch (error) {
-      console.error("Error signing in:", error);
       setSnackbar({
         open: true,
         message: "Error signing in: " + error.message,
         severity: "error",
       });
     } finally {
-      setLoading(false); // Stop loading after sign-in attempt
+      setLoading(false);
     }
   };
 
   return (
     <>
-      {/* AppBar */}
-      <AppBar position="static" sx={{ backgroundColor: "primary.main" }}>
+      {/* AppBar with Glassmorphism */}
+      <AppBar position="static" color="primary">
         <Toolbar>
-          {/* App Name Button on the Top Left */}
-          <ButtonBase
+            <ButtonBase
             onClick={() => router.push("/")}
             sx={{ display: "flex", alignItems: "center" }}
             aria-label="Go to home page"
-          >
+            >
             <Typography variant="h6" sx={{ color: "#fff" }}>
-              Telemedicine App
+                Telemedicine App
             </Typography>
-          </ButtonBase>
+            </ButtonBase>
 
-          {/* Spacer to push the following buttons to the right */}
-          <Box sx={{ flexGrow: 1 }} />
+            <Box sx={{ flexGrow: 1 }} />
 
-          {/* Login and Sign Up Buttons on the Top Right */}
-          <Button
+            <Button
             color="inherit"
             onClick={() => router.push("/login")}
             sx={{
-              transition: "transform 0.2s",
-              "&:hover": {
+                transition: "transform 0.2s",
+                "&:hover": {
                 transform: "scale(1.05)",
-              },
+                },
+                color: "#fff",
             }}
             aria-label="Login"
-          >
+            >
             Login
-          </Button>
-          <Button
+            </Button>
+            <Button
             color="inherit"
             onClick={() => router.push("/signup")}
             sx={{
-              transition: "transform 0.2s",
-              "&:hover": {
-                transform: "scale(1.05)",
-              },
-            }}
-            aria-label="Sign Up"
-          >
-            Sign Up
-          </Button>
-        </Toolbar>
-      </AppBar>
-
-      {/* Main Container */}
-      <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
-        <Card elevation={6} sx={{ padding: 3, borderRadius: 2 }}>
-          <CardContent>
-            {/* Header */}
-            <Typography variant="h4" gutterBottom align="center" sx={{ mb: 3 }}>
-              Sign In to Your Account
-            </Typography>
-
-            {/* Email Field */}
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-label="Email"
-            />
-
-            {/* Password Field */}
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              aria-label="Password"
-            />
-
-            {/* Sign In Button */}
-            <Button
-              color="primary"
-              variant="contained"
-              fullWidth
-              onClick={handleSignIn}
-              disabled={loading} // Disable button when loading
-              sx={{
-                mt: 4,
-                py: 1.5,
-                borderRadius: 1,
                 transition: "transform 0.2s",
                 "&:hover": {
-                  transform: "scale(1.05)",
+                transform: "scale(1.05)",
                 },
-              }}
-              aria-label="Sign In Button"
+                color: "#fff",
+            }}
+            aria-label="Sign Up"
             >
-              {loading ? "Signing In..." : "Sign In"}
+            Sign Up
             </Button>
+        </Toolbar>
+    </AppBar>
 
-            {/* Forgot Password Link (optional) */}
-            <Box sx={{ mt: 2, textAlign: "center" }}>
+
+      {/* Background */}
+      <Box
+        sx={{
+          background: "url('/path-to-your-background-image.jpg') no-repeat center center fixed",
+          backgroundSize: "cover",
+          height: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        {/* Main Container */}
+        <Container maxWidth="sm">
+          <Card
+            elevation={6}
+            sx={{
+              backdropFilter: "blur(10px)",
+              background: theme.palette.background.paper, // Use the theme's paper color
+              borderRadius: 4,
+              boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.3)",
+              padding: 4,
+            }}
+          >
+            <CardContent>
+              {/* Header */}
+              <Typography variant="h4" gutterBottom align="center" sx={{ mb: 3, color: theme.palette.text.primary }}>
+                Sign In to Your Account
+              </Typography>
+
+              {/* Email Field */}
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                aria-label="Email"
+                InputProps={{
+                  style: {
+                    color: theme.palette.text.primary, // White text for visibility
+                  },
+                }}
+                InputLabelProps={{
+                  style: { color: theme.palette.text.primary }, // White label for visibility
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backdropFilter: "blur(4px)",
+                    background: "rgba(255, 255, 255, 0.2)", // Light background for input
+                    borderRadius: "12px",
+                    border: "1px solid rgba(255, 255, 255, 0.3)", // Border for visibility
+                  },
+                }}
+              />
+
+              {/* Password Field */}
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                aria-label="Password"
+                InputProps={{
+                  style: {
+                    color: theme.palette.text.primary,
+                  },
+                }}
+                InputLabelProps={{
+                  style: { color: theme.palette.text.primary },
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backdropFilter: "blur(4px)",
+                    background: "rgba(255, 255, 255, 0.2)",
+                    borderRadius: "12px",
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                  },
+                }}
+              />
+
+              {/* Sign In Button */}
               <Button
-                color="secondary"
-                onClick={() => router.push("/forgot-password")}
-                aria-label="Forgot Password"
+                color="primary"
+                variant="contained"
+                fullWidth
+                onClick={handleSignIn}
+                disabled={loading}
+                sx={{
+                  mt: 4,
+                  py: 1.5,
+                  borderRadius: 2,
+                  background: "rgba(255, 255, 255, 0.2)",
+                  backdropFilter: "blur(10px)",
+                  transition: "transform 0.2s",
+                  "&:hover": {
+                    transform: "scale(1.05)",
+                    background: "rgba(255, 255, 255, 0.3)",
+                  },
+                  boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
+                  color: theme.palette.text.primary,
+                }}
+                aria-label="Sign In Button"
               >
-                Forgot Password?
+                {loading ? "Signing In..." : "Sign In"}
               </Button>
-            </Box>
-          </CardContent>
-        </Card>
-      </Container>
+
+              {/* Forgot Password Link */}
+              <Box sx={{ mt: 2, textAlign: "center" }}>
+                <Button
+                  color="secondary"
+                  onClick={() => router.push("/forgot-password")}
+                  aria-label="Forgot Password"
+                  sx={{
+                    color: theme.palette.text.primary,
+                  }}
+                >
+                  Forgot Password?
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Container>
+      </Box>
 
       {/* Snackbar for Notifications */}
       <Snackbar
