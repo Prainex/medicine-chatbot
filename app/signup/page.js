@@ -13,6 +13,8 @@ import {
   Select,
   MenuItem,
   Typography,
+  AppBar,
+  Toolbar,
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -84,7 +86,19 @@ export default function SignUp() {
   });
 
   return (
-    <Container maxWidth="sm">
+    <>
+    <AppBar position="static">
+    <Toolbar>
+      <Typography variant="h6">Telemedicine App</Typography>
+      <Button color="inherit" onClick={() => router.push('/login')}>
+        Login
+      </Button>
+      <Button color="inherit" onClick={() => router.push('/signup')}>
+        Sign Up
+      </Button>
+    </Toolbar>
+  </AppBar>
+    <Container maxWidth="sm" sx={{backgroundColor: 'white'}}>
       <Typography variant="h4" gutterBottom>
         Sign Up
       </Typography>
@@ -195,5 +209,6 @@ export default function SignUp() {
         </Button>
       </form>
     </Container>
+    </>
   );
 }
