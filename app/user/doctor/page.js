@@ -156,7 +156,7 @@ export default function PatientDashboard() {
                 Welcome to Your Dashboard
               </Typography>
               <Typography variant="body1">
-                Here you can manage your profile, participate in chats, and more.
+                Here you can manage your profile, speak to patients, and more.
               </Typography>
             </Container>
           </Box>
