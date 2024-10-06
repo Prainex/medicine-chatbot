@@ -4,6 +4,7 @@ import { Container, Button, AppBar, Toolbar, Typography, Box, ButtonBase, IconBu
 import MenuIcon from '@mui/icons-material/Menu'; // Correct import for MenuIcon
 import { useRouter } from 'next/navigation';
 
+
 export default function Home() {
   const router = useRouter(); // This will work correctly in the App Router now
 
@@ -106,7 +107,7 @@ export default function Home() {
       
       <Box
       sx={{
-        backgroundImage: 'url(https://nmcdn.io/e186d21f8c7946a19faed23c3da2f0da/2198139c60484547ac05dbaa326cedbb/files/stethoscope-and-phone-main-process-sc720x385-t1603819654.jpg?v=5d0a09a3c3)',
+        backgroundImage: 'url(https://raw.githubusercontent.com/Prainex/medicine-chatbot/44250c31c5119dec475cd526fb8cd46118ba051d/public/images/iStock-1255213445.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         width: '100vw',
