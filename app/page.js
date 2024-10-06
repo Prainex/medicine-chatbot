@@ -175,7 +175,7 @@ export default function Home() {
           justifyContent: 'center',
           backgroundImage: `
             radial-gradient(circle, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.7) 100%),
-            url('https://nmcdn.io/e186d21f8c7946a19faed23c3da2f0da/2198139c60484547ac05dbaa326cedbb/files/stethoscope-and-phone-main-process-sc720x385-t1603819654.jpg?v=5d0a09a3c3')
+            url('https://github.com/Prainex/medicine-chatbot/blob/main/public/images/iStock-1255213445.jpg?raw=true')
           `,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
