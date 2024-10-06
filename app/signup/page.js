@@ -153,116 +153,552 @@ export default function SignUp() {
   });
 
   return (
-    <Container maxWidth="sm">
-      <Typography variant="h4" gutterBottom>
-        Sign Up
-      </Typography>
-      <FormControl fullWidth margin="normal">
-        <InputLabel>Account Type</InputLabel>
-        <Select
-          value={accountType}
-          onChange={(e) => setAccountType(e.target.value)}
-          label="Account Type"
+    <>
+      {/* AppBar */}
+      <AppBar position="static" sx={{ backgroundColor: "primary.main" }}>
+        <Toolbar>
+          {/* App Name Button on the Top Left */}
+          <ButtonBase
+            onClick={() => router.push("/")}
+            sx={{ display: "flex", alignItems: "center" }}
+            aria-label="Go to home page"
+          >
+            <Typography variant="h6" sx={{ color: "#fff" }}>
+              Telemedicine App
+            </Typography>
+          </ButtonBase>
+
+          {/* Spacer to push the following buttons to the right */}
+          <Box sx={{ flexGrow: 1 }} />
+
+          {/* Login and Sign Up Buttons on the Top Right */}
+          <Button
+            color="inherit"
+            onClick={() => router.push("/login")}
+            sx={{
+              transition: "transform 0.2s",
+              "&:hover": {
+                transform: "scale(1.05)",
+              },
+            }}
+            aria-label="Login"
+          >
+            Login
+          </Button>
+          <Button
+            color="inherit"
+            onClick={() => router.push("/signup")}
+            sx={{
+              transition: "transform 0.2s",
+              "&:hover": {
+                transform: "scale(1.05)",
+              },
+            }}
+            aria-label="Sign Up"
+          >
+            Sign Up
+          </Button>
+        </Toolbar>
+      </AppBar>
+
+      {/* Main Container */}
+      <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
+        <Card elevation={6} sx={{ padding: 3, borderRadius: 2 }}>
+          <CardContent>
+            {/* Header */}
+            <Typography
+              variant="h4"
+              gutterBottom
+              align="center"
+              sx={{ mb: 3 }}
+            >
+              Create Your Account
+            </Typography>
+
+            {/* Account Type Selection */}
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="account-type-label">Account Type</InputLabel>
+              <Select
+                labelId="account-type-label"
+                id="account-type"
+                value={accountType}
+                onChange={(e) => setAccountType(e.target.value)}
+                label="Account Type"
+                sx={{ borderRadius: 1 }}
+                aria-label="Account Type"
+              >
+                <MenuItem value="patient">Patient</MenuItem>
+                <MenuItem value="doctor">Doctor</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Sign-Up Form */}
+            <form onSubmit={formik.handleSubmit} noValidate>
+              {/* Email Field */}
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Email"
+                name="email"
+                variant="outlined"
+                type="email"
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.email && Boolean(formik.errors.email)}
+                helperText={formik.touched.email && formik.errors.email}
+                aria-label="Email"
+              />
+
+              {/* Password Field */}
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Password"
+                name="password"
+                type="password"
+                variant="outlined"
+                value={formik.values.password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.password && Boolean(formik.errors.password)
+                }
+                helperText={formik.touched.password && formik.errors.password}
+                aria-label="Password"
+              />
+
+              {/* Confirm Password Field */}
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Confirm Password"
+                name="confirmPassword"
+                type="password"
+                variant="outlined"
+                value={formik.values.confirmPassword}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.confirmPassword &&
+                  Boolean(formik.errors.confirmPassword)
+                }
+                helperText={
+                  formik.touched.confirmPassword &&
+                  formik.errors.confirmPassword
+                }
+                aria-label="Confirm Password"
+              />
+
+              {/* Gender Selection */}
+              <FormControl fullWidth margin="normal">
+                <InputLabel id="gender-label">Gender</InputLabel>
+                <Select
+                  labelId="gender-label"
+                  id="gender"
+                  name="gender"
+                  value={formik.values.gender}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.gender && Boolean(formik.errors.gender)}
+                  label="Gender"
+                  sx={{ borderRadius: 1 }}
+                  aria-label="Gender"
+                >
+                  <MenuItem value="Male">Male</MenuItem>
+                  <MenuItem value="Female">Female</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </Select>
+              </FormControl>
+
+              {/* Date of Birth Field */}
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Date of Birth"
+                name="dateOfBirth"
+                type="date"
+                variant="outlined"
+                value={formik.values.dateOfBirth}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={
+                  formik.touched.dateOfBirth &&
+                  Boolean(formik.errors.dateOfBirth)
+                }
+                helperText={
+                  formik.touched.dateOfBirth && formik.errors.dateOfBirth
+                }
+                InputLabelProps={{ shrink: true }}
+                aria-label="Date of Birth"
+              />
+
+              {/* Conditional Fields for Patient */}
+              {accountType === "patient" && (
+                <>
+                  {/* Medications Section */}
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Medications
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Add Medication"
+                      variant="outlined"
+                      value={newMedication}
+                      onChange={(e) => setNewMedication(e.target.value)}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() =>
+                                handleAddItem(
+                                  newMedication,
+                                  setNewMedication,
+                                  setMedications,
+                                  medications
+                                )
+                              }
+                              aria-label="Add Medication"
+                            >
+                              <AddIcon />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 1,
+                        },
+                      }}
+                      aria-label="Add Medication"
+                    />
+                    <List>
+                      {medications.map((medication, index) => (
+                        <ListItem
+                          key={index}
+                          secondaryAction={
+                            <IconButton
+                              edge="end"
+                              aria-label={`Delete ${medication}`}
+                              onClick={() =>
+                                handleRemoveItem(
+                                  index,
+                                  setMedications,
+                                  medications
+                                )
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          }
+                          sx={{ pl: 0 }}
+                        >
+                          {medication}
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Box>
+
+                  {/* Medical History Section */}
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Medical History
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Add Medical Condition"
+                      variant="outlined"
+                      value={newMedicalIssue}
+                      onChange={(e) => setNewMedicalIssue(e.target.value)}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() =>
+                                handleAddItem(
+                                  newMedicalIssue,
+                                  setNewMedicalIssue,
+                                  setMedicalHistory,
+                                  medicalHistory
+                                )
+                              }
+                              aria-label="Add Medical Condition"
+                            >
+                              <AddIcon />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 1,
+                        },
+                      }}
+                      aria-label="Add Medical Condition"
+                    />
+                    <List>
+                      {medicalHistory.map((issue, index) => (
+                        <ListItem
+                          key={index}
+                          secondaryAction={
+                            <IconButton
+                              edge="end"
+                              aria-label={`Delete ${issue}`}
+                              onClick={() =>
+                                handleRemoveItem(
+                                  index,
+                                  setMedicalHistory,
+                                  medicalHistory
+                                )
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          }
+                          sx={{ pl: 0 }}
+                        >
+                          {issue}
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Box>
+
+                  {/* Allergies Section */}
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Allergies
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Add Allergy"
+                      variant="outlined"
+                      value={newAllergy}
+                      onChange={(e) => setNewAllergy(e.target.value)}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() =>
+                                handleAddItem(
+                                  newAllergy,
+                                  setNewAllergy,
+                                  setAllergies,
+                                  allergies
+                                )
+                              }
+                              aria-label="Add Allergy"
+                            >
+                              <AddIcon />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 1,
+                        },
+                      }}
+                      aria-label="Add Allergy"
+                    />
+                    <List>
+                      {allergies.map((allergy, index) => (
+                        <ListItem
+                          key={index}
+                          secondaryAction={
+                            <IconButton
+                              edge="end"
+                              aria-label={`Delete ${allergy}`}
+                              onClick={() =>
+                                handleRemoveItem(
+                                  index,
+                                  setAllergies,
+                                  allergies
+                                )
+                              }
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          }
+                          sx={{ pl: 0 }}
+                        >
+                          {allergy}
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Box>
+                </>
+              )}
+
+              {/* Conditional Fields for Doctor */}
+              {accountType === "doctor" && (
+                <>
+                  {/* Medical License Number Field */}
+                  <TextField
+                    fullWidth
+                    margin="normal"
+                    label="Medical License Number"
+                    name="medicalLicenseNumber"
+                    variant="outlined"
+                    value={formik.values.medicalLicenseNumber}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.medicalLicenseNumber &&
+                      Boolean(formik.errors.medicalLicenseNumber)
+                    }
+                    helperText={
+                      formik.touched.medicalLicenseNumber &&
+                      formik.errors.medicalLicenseNumber
+                    }
+                    aria-label="Medical License Number"
+                  />
+
+                  {/* State Selection */}
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel id="state-label">State</InputLabel>
+                    <Select
+                      labelId="state-label"
+                      id="state"
+                      name="state"
+                      value={formik.values.state}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={
+                        formik.touched.state && Boolean(formik.errors.state)
+                      }
+                      label="State"
+                      sx={{ borderRadius: 1 }}
+                      aria-label="State"
+                    >
+                      {/* Add state options as needed */}
+                      <MenuItem value="AL">Alabama</MenuItem>
+                      <MenuItem value="AK">Alaska</MenuItem>
+                      <MenuItem value="AZ">Arizona</MenuItem>
+                      <MenuItem value="AR">Arkansas</MenuItem>
+                      <MenuItem value="CA">California</MenuItem>
+                      <MenuItem value="CO">Colorado</MenuItem>
+                      <MenuItem value="CT">Connecticut</MenuItem>
+                      <MenuItem value="DE">Delaware</MenuItem>
+                      <MenuItem value="FL">Florida</MenuItem>
+                      <MenuItem value="GA">Georgia</MenuItem>
+                      <MenuItem value="HI">Hawaii</MenuItem>
+                      <MenuItem value="ID">Idaho</MenuItem>
+                      <MenuItem value="IL">Illinois</MenuItem>
+                      <MenuItem value="IN">Indiana</MenuItem>
+                      <MenuItem value="IA">Iowa</MenuItem>
+                      <MenuItem value="KS">Kansas</MenuItem>
+                      <MenuItem value="KY">Kentucky</MenuItem>
+                      <MenuItem value="LA">Louisiana</MenuItem>
+                      <MenuItem value="ME">Maine</MenuItem>
+                      <MenuItem value="MD">Maryland</MenuItem>
+                      <MenuItem value="MA">Massachusetts</MenuItem>
+                      <MenuItem value="MI">Michigan</MenuItem>
+                      <MenuItem value="MN">Minnesota</MenuItem>
+                      <MenuItem value="MS">Mississippi</MenuItem>
+                      <MenuItem value="MO">Missouri</MenuItem>
+                      <MenuItem value="MT">Montana</MenuItem>
+                      <MenuItem value="NE">Nebraska</MenuItem>
+                      <MenuItem value="NV">Nevada</MenuItem>
+                      <MenuItem value="NH">New Hampshire</MenuItem>
+                      <MenuItem value="NJ">New Jersey</MenuItem>
+                      <MenuItem value="NM">New Mexico</MenuItem>
+                      <MenuItem value="NY">New York</MenuItem>
+                      <MenuItem value="NC">North Carolina</MenuItem>
+                      <MenuItem value="ND">North Dakota</MenuItem>
+                      <MenuItem value="OH">Ohio</MenuItem>
+                      <MenuItem value="OK">Oklahoma</MenuItem>
+                      <MenuItem value="OR">Oregon</MenuItem>
+                      <MenuItem value="PA">Pennsylvania</MenuItem>
+                      <MenuItem value="RI">Rhode Island</MenuItem>
+                      <MenuItem value="SC">South Carolina</MenuItem>
+                      <MenuItem value="SD">South Dakota</MenuItem>
+                      <MenuItem value="TN">Tennessee</MenuItem>
+                      <MenuItem value="TX">Texas</MenuItem>
+                      <MenuItem value="UT">Utah</MenuItem>
+                      <MenuItem value="VT">Vermont</MenuItem>
+                      <MenuItem value="VA">Virginia</MenuItem>
+                      <MenuItem value="WA">Washington</MenuItem>
+                      <MenuItem value="WV">West Virginia</MenuItem>
+                      <MenuItem value="WI">Wisconsin</MenuItem>
+                      <MenuItem value="WY">Wyoming</MenuItem>
+                      {/* ...other states */}
+                    </Select>
+                  </FormControl>
+
+                  {/* Specialization Selection */}
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel id="specialization-label">
+                      Specialization
+                    </InputLabel>
+                    <Select
+                      labelId="specialization-label"
+                      id="specialization"
+                      name="specialization"
+                      value={formik.values.specialization}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={
+                        formik.touched.specialization &&
+                        Boolean(formik.errors.specialization)
+                      }
+                      label="Specialization"
+                      sx={{ borderRadius: 1 }}
+                      aria-label="Specialization"
+                    >
+                      {/* Add specialization options as needed */}
+                      <MenuItem value="Cardiology">Cardiology</MenuItem>
+                      <MenuItem value="Dermatology">Dermatology</MenuItem>
+                      <MenuItem value="Neurology">Neurology</MenuItem>
+                      <MenuItem value="Pediatrics">Pediatrics</MenuItem>
+                      <MenuItem value="Oncology">Oncology</MenuItem>
+                      <MenuItem value="Surgery">Surgery</MenuItem>
+                      {/* ...other specializations */}
+                    </Select>
+                  </FormControl>
+                </>
+              )}
+
+              {/* Submit Button */}
+              <Button
+                color="primary"
+                variant="contained"
+                fullWidth
+                type="submit"
+                sx={{
+                  mt: 4,
+                  py: 1.5,
+                  borderRadius: 1,
+                  transition: "transform 0.2s",
+                  "&:hover": {
+                    transform: "scale(1.05)",
+                  },
+                }}
+                aria-label="Sign Up Button"
+              >
+                Sign Up
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </Container>
+
+      {/* Snackbar for Notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+          variant="filled"
         >
-          <MenuItem value="user">User</MenuItem>
-          <MenuItem value="doctor">Doctor</MenuItem>
-        </Select>
-      </FormControl>
-      <form onSubmit={formik.handleSubmit}>
-        <TextField
-          fullWidth
-          margin="normal"
-          label="Email"
-          name="email"
-          variant="outlined"
-          value={formik.values.email}
-          onChange={formik.handleChange}
-          error={formik.touched.email && Boolean(formik.errors.email)}
-          helperText={formik.touched.email && formik.errors.email}
-        />
-        <TextField
-          fullWidth
-          margin="normal"
-          label="Password"
-          name="password"
-          type="password"
-          variant="outlined"
-          value={formik.values.password}
-          onChange={formik.handleChange}
-          error={formik.touched.password && Boolean(formik.errors.password)}
-          helperText={formik.touched.password && formik.errors.password}
-        />
-        <TextField
-          fullWidth
-          margin="normal"
-          label="Gender"
-          name="gender"
-          variant="outlined"
-          value={formik.values.gender}
-          onChange={formik.handleChange}
-          error={formik.touched.gender && Boolean(formik.errors.gender)}
-          helperText={formik.touched.gender && formik.errors.gender}
-        />
-        <TextField
-          fullWidth
-          margin="normal"
-          label="Age"
-          name="age"
-          type="number"
-          variant="outlined"
-          value={formik.values.age}
-          onChange={formik.handleChange}
-          error={formik.touched.age && Boolean(formik.errors.age)}
-          helperText={formik.touched.age && formik.errors.age}
-        />
-        {accountType === 'user' && (
-          <>
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Medications"
-              name="medications"
-              variant="outlined"
-              value={formik.values.medications}
-              onChange={formik.handleChange}
-            />
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Medical History"
-              name="medicalHistory"
-              variant="outlined"
-              value={formik.values.medicalHistory}
-              onChange={formik.handleChange}
-            />
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Allergies"
-              name="allergies"
-              variant="outlined"
-              value={formik.values.allergies}
-              onChange={formik.handleChange}
-            />
-          </>
-        )}
-        {accountType === 'doctor' && (
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Credentials"
-            name="credentials"
-            variant="outlined"
-            value={formik.values.credentials}
-            onChange={formik.handleChange}
-            error={formik.touched.credentials && Boolean(formik.errors.credentials)}
-            helperText={formik.touched.credentials && formik.errors.credentials}
-          />
-        )}
-        <Button color="primary" variant="contained" fullWidth type="submit">
-          Sign Up
-        </Button>
-      </form>
-    </Container>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 }

@@ -12,7 +12,7 @@ const theme = createTheme({
 
     background: {
         default: '#f5f5f5', // Default background (e.g., body background)
-        paper: 'rgba(255, 255, 255, 0.8)', // Light translucent background for glassmorphism
+        paper: 'rgba(255, 255, 255, 1)', // Light translucent background for glassmorphism
       },
 
 
