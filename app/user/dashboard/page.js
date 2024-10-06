@@ -270,7 +270,7 @@ export default function PatientDashboard() {
           isDoctorActive: true,
         });
 
-        // Set the local state to disable message input
+        // Set the local state to disable AI responses but allow communication with the doctor
         setIsDoctorRequested(true);
 
         setSnackbarMessage('A real doctor has been requested and will assist you shortly.');
@@ -604,11 +604,19 @@ export default function PatientDashboard() {
                   <Box
                     key={index}
                     display="flex"
-                    justifyContent={msg.role === 'assistant' ? 'flex-start' : 'flex-end'}
+                    justifyContent={
+                      msg.role === 'assistant' || msg.role === 'doctor' ? 'flex-start' : 'flex-end'
+                    }
                     mb={0.5} // Reduced margin-bottom for closer messages
                   >
                     <Box
-                      bgcolor={msg.role === 'assistant' ? 'primary.main' : 'secondary.main'}
+                      bgcolor={
+                        msg.role === 'assistant'
+                          ? 'primary.main'
+                          : msg.role === 'doctor'
+                          ? 'info.main'
+                          : 'secondary.main'
+                      }
                       color="white"
                       borderRadius={2}
                       p={2}
@@ -649,14 +657,14 @@ export default function PatientDashboard() {
                   onKeyDown={handleKeyDown}
                   multiline
                   maxRows={4}
-                 // disabled={isDoctorRequested} // Disable input if doctor is active
+                  disabled={false} // Always enable input
                   helperText={isDoctorRequested ? 'A real doctor will assist you shortly.' : ''}
                 />
                 <Button
                   variant="contained"
                   color="primary"
                   onClick={sendMessage}
-                 // disabled={isLoading || isDoctorRequested} // Disable send button if doctor is active
+                  disabled={isLoading} // Only disable when loading
                 >
                   Send
                 </Button>
@@ -665,9 +673,9 @@ export default function PatientDashboard() {
                   color="error"
                   startIcon={<SaveIcon />}
                   onClick={talkToRealDoctor}
-                  disabled={isLoading || messages.length === 0}
+                  disabled={isLoading || isDoctorRequested || messages.length === 0}
                 >
-                  Talk to a Real Doctor
+                  {isDoctorRequested ? 'Doctor Requested' : 'Talk to a Real Doctor'}
                 </Button>
               </Box>
             </Stack>
