@@ -145,15 +145,14 @@ export default function DoctorDashboard() {
       // Chat already exists
       setCurrentChatId(chatId);
     } else {
-      // Create a new doctor-patient chat
+      // Create a new chat
       try {
         const newChat = await addDoc(collection(db, 'chats'), {
-          chatType: 'doctor-patient',
           userId: userId,
           doctorId: auth.currentUser.uid,
           name: `Chat with User ${userId}`,
           messages: [
-            { role: 'doctor', content: 'Hello, how can I assist you today?' },
+            { role: 'assistant', content: 'Hello, how can I assist you today?' },
           ],
           createdAt: serverTimestamp(),
         });
@@ -192,13 +191,57 @@ export default function DoctorDashboard() {
     setIsLoading(true);
 
     try {
-      // Directly update Firestore without sending to AI
-      const chatDocRef = doc(db, 'chats', currentChatId);
-      await updateDoc(chatDocRef, {
-        messages: [...chatMessages, doctorMessage],
+      // Send the message to the API endpoint
+      const response = await fetch('/api/chat', { // Ensure the correct API route
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...chatMessages, doctorMessage].map(msg => ({
+            role: msg.role === 'assistant' ? 'assistant' : 'user',
+            content: msg.content
+          })),
+          chatId: currentChatId, // Pass the chatId if needed
+        }),
       });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Assistant Response:', data.message);
+
+        const assistantMessage = { role: 'assistant', content: data.message };
+        // Update the chatMessages state
+        setChatMessages((prevMessages) => [...prevMessages, assistantMessage]);
+
+        // Update Firestore with the new messages
+        const chatDocRef = doc(db, 'chats', currentChatId);
+        await updateDoc(chatDocRef, {
+          messages: [...chatMessages, doctorMessage, assistantMessage],
+        });
+      } else {
+        const errorData = await response.json();
+        console.error('Error from API:', errorData.error);
+        setSnackbarMessage('Error from assistant: ' + errorData.error);
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+        // Optionally, add an error message to the chat
+        const errorAssistantMessage = { role: 'assistant', content: 'Sorry, something went wrong.' };
+        setChatMessages((prevMessages) => [...prevMessages, errorAssistantMessage]);
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
+      setChatMessages((prevMessages) => {
+        const updatedMessages = [...prevMessages];
+        // Find the last assistant message to update with error
+        const lastAssistantIndex = updatedMessages
+          .map((msg) => msg.role)
+          .lastIndexOf('assistant');
+        if (lastAssistantIndex !== -1) {
+          updatedMessages[lastAssistantIndex].content = 'Sorry, something went wrong.';
+        }
+        return updatedMessages;
+      });
       setSnackbarMessage('Failed to send message: ' + error.message);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -401,7 +444,7 @@ export default function DoctorDashboard() {
                       p={2}
                       maxWidth="70%"
                     >
-                      <Typography variant="body1">Sending...</Typography>
+                      <Typography variant="body1">Typing...</Typography>
                     </Box>
                   </Box>
                 )}
