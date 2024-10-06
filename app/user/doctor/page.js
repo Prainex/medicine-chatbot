@@ -70,7 +70,7 @@ export default function PatientDashboard() {
               <MenuIcon />
             </IconButton>
             <Button onClick={() => router.push('/')}>
-              <Typography variant="h6" sx={{ flexGrow: 1 }}>
+              <Typography variant="h6" sx={{ flexGrow: 1, color: '#fff' }}>
                 Telemedicine App
               </Typography>
             </Button>
