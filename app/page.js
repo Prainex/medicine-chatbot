@@ -18,6 +18,8 @@ import Link from 'next/link';
 import MailOutlineIcon from '@mui/icons-material/MailOutline'; // Example icon
 import CreateIcon from '@mui/icons-material/Create'; // Example icon
 import BuildIcon from '@mui/icons-material/Build'; // Example icon
+import FeedbackIcon from '@mui/icons-material/Feedback';
+import AddIcon from '@mui/icons-material/Add';
 
 // Reusable CircularButton Component
 const CircularButton = ({ IconComponent, title, description, hasBorder }) => (
@@ -252,8 +254,8 @@ export default function Home() {
   <Box sx={{ textAlign: 'center', maxWidth: '250px' }}>
     <CircularButton
       IconComponent={MailOutlineIcon}
-      title="This Is Important"
-      description="Contact us?.. Maybe ... Call me... Whatever"
+      title="Contact Us"
+      description="Feel free to reach out at support@tmedicine.org for feedback and further questions!"
       hasBorder={true}
     />
   </Box>
@@ -262,8 +264,8 @@ export default function Home() {
   <Box sx={{ textAlign: 'center', maxWidth: '250px' }}>
     <CircularButton
       IconComponent={CreateIcon}
-      title="Also Important"
-      description="This and that and bla bla bla"
+      title="About Us"
+      description="Our mission is to deliver high quality healthcare to underrepresented communities harnessing the power of AI and real Doctors alike."
       hasBorder={true}
     />
   </Box>
@@ -271,9 +273,9 @@ export default function Home() {
   {/* Button 3 */}
   <Box sx={{ textAlign: 'center', maxWidth: '250px' }}>
     <CircularButton
-      IconComponent={BuildIcon}
-      title="Probably Important"
-      description="Settings yk... The important stuff"
+      IconComponent={AddIcon}
+      title="Are you a Doctor?"
+      description="We are always looking for more volunteers to help serve the underrepresented communities."
       hasBorder={false}
     />
   </Box>
