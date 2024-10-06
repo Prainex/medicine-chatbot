@@ -174,7 +174,7 @@ export default function PatientDashboard() {
   };
 
   const sendMessage = async () => {
-    if (!message.trim()) return; // Prevent sending empty messages
+    if (!message.trim()) return;
     if (!selectedChatId) {
       setSnackbarMessage('Please select or create a chat first.');
       setSnackbarSeverity('warning');
@@ -190,21 +190,35 @@ export default function PatientDashboard() {
     setIsLoading(true);
 
     try {
-      // Simulate API call delay (replace with actual API integration if needed)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call OpenAI API
+      const response = await fetch('/api/chat', {  // You'll need to create this API route
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage].map(msg => ({
+            role: msg.role === 'doctor' ? 'assistant' : 'user',
+            content: msg.content
+          }))
+        }),
+      });
 
-      // Simulate API response
-      const apiResponse = 'This is a response from the doctor.';
+      if (!response.ok) {
+        throw new Error('Failed to get response from OpenAI');
+      }
+
+      const data = await response.json();
+      const aiResponse = data.message;
 
       // Update the doctor's message in the state
       setMessages((prevMessages) => {
         const updatedMessages = [...prevMessages];
-        // Find the last doctor message
         const lastDoctorIndex = updatedMessages
           .map((msg) => msg.role)
           .lastIndexOf('doctor');
         if (lastDoctorIndex !== -1) {
-          updatedMessages[lastDoctorIndex].content = apiResponse;
+          updatedMessages[lastDoctorIndex].content = aiResponse;
         }
         return updatedMessages;
       });
@@ -212,13 +226,12 @@ export default function PatientDashboard() {
       // Update Firestore with the new messages
       const chatDocRef = doc(db, 'chats', selectedChatId);
       await updateDoc(chatDocRef, {
-        messages: [...messages, userMessage, { role: 'doctor', content: apiResponse }],
+        messages: [...messages, userMessage, { role: 'doctor', content: aiResponse }],
       });
     } catch (error) {
       console.error('Failed to send message:', error);
       setMessages((prevMessages) => {
         const updatedMessages = [...prevMessages];
-        // Find the last doctor message
         const lastDoctorIndex = updatedMessages
           .map((msg) => msg.role)
           .lastIndexOf('doctor');
@@ -227,7 +240,7 @@ export default function PatientDashboard() {
         }
         return updatedMessages;
       });
-      setSnackbarMessage('Failed to send message.');
+      setSnackbarMessage('Failed to send message: ' + error.message);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     } finally {

@@ -1,41 +1,41 @@
-import {NextResponse} from 'next/server' // Import NextResponse from Next.js for handling responses
-import OpenAI from 'openai' // Import OpenAI library for interacting with the OpenAI API
+// app/api/chat/route.js
+import OpenAI from 'openai';
 
-// System prompt for the AI, providing guidelines on how to respond to users
-const systemPrompt = "asdf" // Use your own system prompt here
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-// POST function to handle incoming requests
 export async function POST(req) {
-  const openai = new OpenAI() // Create a new instance of the OpenAI client
-  const data = await req.json() // Parse the JSON body of the incoming request
+  try {
+    const body = await req.json();
+    const messages = body.messages;
 
-  // Create a chat completion request to the OpenAI API
-  const completion = await openai.chat.completions.create({
-    messages: [{role: 'system', content: systemPrompt}, ...data], // Include the system prompt and user messages
-    model: 'gpt-4o', // Specify the model to use
-    stream: true, // Enable streaming responses
-  })
+    // Add a system message to guide the AI's responses
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a professional and empathetic doctor in a telemedicine consultation. Provide clear, accurate medical information while maintaining a caring demeanor. Do not make definitive diagnoses but offer general guidance and recommend in-person consultation when appropriate.'
+    };
 
-  // Create a ReadableStream to handle the streaming response
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder() // Create a TextEncoder to convert strings to Uint8Array
-      try {
-        // Iterate over the streamed chunks of the response
-        for await (const chunk of completion) {
-          const content = chunk.choices[0]?.delta?.content // Extract the content from the chunk
-          if (content) {
-            const text = encoder.encode(content) // Encode the content to Uint8Array
-            controller.enqueue(text) // Enqueue the encoded text to the stream
-          }
-        }
-      } catch (err) {
-        controller.error(err) // Handle any errors that occur during streaming
-      } finally {
-        controller.close() // Close the stream when done
-      }
-    },
-  })
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',  // or 'gpt-3.5-turbo' depending on your needs
+      messages: [systemMessage, ...messages],
+      temperature: 0.7,
+      max_tokens: 500
+    });
 
-  return new NextResponse(stream) // Return the stream as the response
+    return new Response(JSON.stringify({
+      message: completion.choices[0].message.content
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 200
+    });
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+    return new Response(JSON.stringify({
+      error: 'Failed to get response from OpenAI'
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500
+    });
+  }
 }
