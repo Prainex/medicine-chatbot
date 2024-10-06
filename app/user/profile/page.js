@@ -150,7 +150,7 @@ export default function ProfilePage() {
                             Telemedicine App
                         </Typography>
                     </Button>
-                    <Button color="inherit" onClick={() => router.push('/dashboard')}>
+                    <Button color="inherit" onClick={() => router.push('/user/dashboard')}>
                         Dashboard
                     </Button>
                     <Button color="inherit" onClick={() => router.push('/')}>
