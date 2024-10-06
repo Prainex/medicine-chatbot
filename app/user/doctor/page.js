@@ -74,7 +74,7 @@ export default function PatientDashboard() {
                 Telemedicine App
               </Typography>
             </Button>
-            <Button color="inherit" onClick={() => router.push('/profile')}>
+            <Button color="inherit" onClick={() => router.push('/user/profile')}>
               Profile
             </Button>
             <Button color="inherit" onClick={() => router.push('/')}>
