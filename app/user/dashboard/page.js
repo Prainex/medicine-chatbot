@@ -49,6 +49,7 @@ export default function PatientDashboard() {
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [selectedChatName, setSelectedChatName] = useState('');
   const [loadingChats, setLoadingChats] = useState(true);
+  const [isDoctorRequested, setIsDoctorRequested] = useState(false); // Tracks if a doctor has been requested
   const messagesEndRef = useRef(null);
   const router = useRouter();
   const theme = useTheme();
@@ -108,6 +109,7 @@ export default function PatientDashboard() {
     if (!selectedChatId) {
       setMessages([]);
       setSelectedChatName('');
+      setIsDoctorRequested(false); // Reset doctor request state when no chat is selected
       return;
     }
 
@@ -120,6 +122,13 @@ export default function PatientDashboard() {
           const chatData = docSnap.data();
           setMessages(chatData.messages || []);
           setSelectedChatName(chatData.name || `Chat ${selectedChatId}`);
+
+          // Check if a real doctor has been requested
+          if (chatData.isDoctorActive) {
+            setIsDoctorRequested(true);
+          } else {
+            setIsDoctorRequested(false);
+          }
         } else {
           console.error('No chat data found');
           setSnackbarMessage('Selected chat does not exist.');
@@ -154,7 +163,7 @@ export default function PatientDashboard() {
         userId: user.uid,
         name: `Chat ${chats.length + 1}`,
         messages: [
-          { role: 'assistant', content: 'Hello, what brings you in today?' }, // Changed 'doctor' to 'assistant' for consistency
+          { role: 'assistant', content: 'Hello, what brings you in today?' }, // Consistent role
         ],
         createdAt: serverTimestamp(),
       });
@@ -168,6 +177,119 @@ export default function PatientDashboard() {
       setSnackbarMessage('Error creating new chat: ' + error.message);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
+    }
+  };
+
+  /**
+   * Handles the action when a patient requests to talk to a real doctor.
+   * It summarizes the conversation and sets the flag to stop AI responses.
+   */
+  const talkToRealDoctor = async () => {
+    if (!selectedChatId) {
+      setSnackbarMessage('Please select a chat first.');
+      setSnackbarSeverity('warning');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    if (messages.length === 0) {
+      setSnackbarMessage('No messages to summarize.');
+      setSnackbarSeverity('warning');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Prepare the summary and issueTitle prompt
+      const summaryPrompt =
+        'Please summarize the conversation so far to be reviewed by a doctor and provide a brief 2-3 word issue title in the following JSON format:\n{\n  "summary": "Your summary here.",\n  "issueTitle": "Title here"\n}';
+
+      // Create a summary message
+      const summaryMessage = { role: 'user', content: summaryPrompt };
+
+      // Send the summary prompt to the API
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatId: selectedChatId, // Include chatId
+          messages: [...messages, summaryMessage].map((msg) => ({
+            role: msg.role === 'assistant' ? 'assistant' : 'user',
+            content: msg.content,
+          })),
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Summary Response:', data.message);
+
+        const aiResponse = data.message;
+
+        // Parse the summary and issueTitle
+        let summary = '';
+        let issueTitle = '';
+
+        try {
+          const parsedResponse = JSON.parse(aiResponse);
+          summary = parsedResponse.summary || '';
+          issueTitle = parsedResponse.issueTitle || '';
+        } catch (parseError) {
+          console.error('Error parsing AI response:', parseError);
+          // Fallback if parsing fails
+          summary = aiResponse;
+          issueTitle = 'No Title';
+        }
+
+        // Upload the summary and issueTitle to Firebase under 'userSummaries'
+        const user = auth.currentUser;
+        if (!user) {
+          setSnackbarMessage('User not authenticated.');
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+          return;
+        }
+
+        // Add to 'userSummaries' collection
+        await addDoc(collection(db, 'userSummaries'), {
+          userId: user.uid,
+          chatId: selectedChatId,
+          summary: summary,
+          issueTitle: issueTitle,
+          isDoctorActive: true, // Set to true since doctor is being requested
+          createdAt: serverTimestamp(),
+        });
+
+        // Update the chat to indicate that a doctor has been requested
+        const chatDocRef = doc(db, 'chats', selectedChatId);
+        await updateDoc(chatDocRef, {
+          isDoctorActive: true,
+        });
+
+        // Set the local state to disable message input
+        setIsDoctorRequested(true);
+
+        setSnackbarMessage('A real doctor has been requested and will assist you shortly.');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+      } else {
+        const errorData = await response.json();
+        console.error('Error from API:', errorData.error);
+        setSnackbarMessage('Error summarizing conversation: ' + errorData.error);
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    } catch (error) {
+      console.error('Error summarizing conversation:', error);
+      setSnackbarMessage('Error summarizing conversation: ' + error.message);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -186,42 +308,54 @@ export default function PatientDashboard() {
     setIsLoading(true);
 
     try {
-      // Send the message to the API endpoint
-      const response = await fetch('/api/chat', { // Ensure the correct API route
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [...messages, userMessage].map(msg => ({
-            role: msg.role === 'assistant' ? 'assistant' : 'user', // Ensure roles align with route.js expectations
-            content: msg.content
-          }))
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Assistant Response:', data.message);
-
-        const assistantMessage = { role: 'assistant', content: data.message };
-        // Update the messages state
-        setMessages((prevMessages) => [...prevMessages, assistantMessage]);
-
-        // Update Firestore with the new messages
-        const chatDocRef = doc(db, 'chats', selectedChatId);
-        await updateDoc(chatDocRef, {
-          messages: [...messages, userMessage, assistantMessage],
+      if (isDoctorRequested) {
+        // If a real doctor has been requested, do not send to AI
+        // Directly update Firestore with the user's message
+        await updateDoc(doc(db, 'chats', selectedChatId), {
+          messages: [...messages, userMessage],
         });
-      } else {
-        const errorData = await response.json();
-        console.error('Error from API:', errorData.error);
-        setSnackbarMessage('Error from assistant: ' + errorData.error);
-        setSnackbarSeverity('error');
+
+        setSnackbarMessage('A real doctor will respond to your message.');
+        setSnackbarSeverity('info');
         setSnackbarOpen(true);
-        // Optionally, add an error message to the chat
-        const errorAssistantMessage = { role: 'assistant', content: 'Sorry, something went wrong.' };
-        setMessages((prevMessages) => [...prevMessages, errorAssistantMessage]);
+      } else {
+        // Send the message to the API endpoint
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chatId: selectedChatId, // Include chatId
+            messages: [...messages, userMessage].map((msg) => ({
+              role: msg.role === 'assistant' ? 'assistant' : 'user',
+              content: msg.content,
+            })),
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Assistant Response:', data.message);
+
+          const assistantMessage = { role: 'assistant', content: data.message };
+          // Update the messages state
+          setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+
+          // Update Firestore with the new messages
+          await updateDoc(doc(db, 'chats', selectedChatId), {
+            messages: [...messages, userMessage, assistantMessage],
+          });
+        } else {
+          const errorData = await response.json();
+          console.error('Error from API:', errorData.error);
+          setSnackbarMessage('Error from assistant: ' + errorData.error);
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+          // Optionally, add an error message to the chat
+          const errorAssistantMessage = { role: 'assistant', content: 'Sorry, something went wrong.' };
+          setMessages((prevMessages) => [...prevMessages, errorAssistantMessage]);
+        }
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -244,103 +378,6 @@ export default function PatientDashboard() {
     }
   };
 
-  const summarizeConversation = async () => {
-    if (!selectedChatId) {
-      setSnackbarMessage('Please select a chat first.');
-      setSnackbarSeverity('warning');
-      setSnackbarOpen(true);
-      return;
-    }
-  
-    if (messages.length === 0) {
-      setSnackbarMessage('No messages to summarize.');
-      setSnackbarSeverity('warning');
-      setSnackbarOpen(true);
-      return;
-    }
-  
-    setIsLoading(true);
-  
-    try {
-      // Prepare the summary and issueTitle prompt
-      const summaryPrompt = 'Please summarize the conversation so far to be reviewed by a doctor and provide a brief 2-3 word issue title in the following JSON format:\n{\n  "summary": "Your summary here.",\n  "issueTitle": "Title here"\n}';
-  
-      // Create a summary message
-      const summaryMessage = { role: 'user', content: summaryPrompt };
-  
-      // Send the summary prompt to the API
-      const response = await fetch('/api/chat', { // Ensure the correct API route
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [...messages, summaryMessage].map(msg => ({
-            role: msg.role === 'assistant' ? 'assistant' : 'user',
-            content: msg.content
-          }))
-        }),
-      });
-  
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Summary Response:', data.message);
-  
-        const aiResponse = data.message;
-  
-        // Parse the summary and issueTitle
-        let summary = '';
-        let issueTitle = '';
-  
-        try {
-          const parsedResponse = JSON.parse(aiResponse);
-          summary = parsedResponse.summary || '';
-          issueTitle = parsedResponse.issueTitle || '';
-        } catch (parseError) {
-          console.error('Error parsing AI response:', parseError);
-          // Fallback if parsing fails
-          summary = aiResponse;
-          issueTitle = 'No Title';
-        }
-  
-        // Upload the summary and issueTitle to Firebase under 'userSummaries'
-        const user = auth.currentUser;
-        if (!user) {
-          setSnackbarMessage('User not authenticated.');
-          setSnackbarSeverity('error');
-          setSnackbarOpen(true);
-          return;
-        }
-  
-        await addDoc(collection(db, 'userSummaries'), {
-          userId: user.uid,
-          chatId: selectedChatId,
-          summary: summary,
-          issueTitle: issueTitle,
-          createdAt: serverTimestamp(),
-        });
-  
-        setSnackbarMessage('Conversation summary uploaded successfully!');
-        setSnackbarSeverity('success');
-        setSnackbarOpen(true);
-      } else {
-        const errorData = await response.json();
-        console.error('Error from API:', errorData.error);
-        setSnackbarMessage('Error summarizing conversation: ' + errorData.error);
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
-      }
-    } catch (error) {
-      console.error('Error summarizing conversation:', error);
-      setSnackbarMessage('Error summarizing conversation: ' + error.message);
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-
   const handleKeyDown = (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault(); // Prevent newline in the input
@@ -356,6 +393,7 @@ export default function PatientDashboard() {
         setSelectedChatId(null);
         setMessages([]);
         setSelectedChatName('');
+        setIsDoctorRequested(false); // Reset doctor request state
         setSnackbarMessage('Chat deleted successfully.');
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
@@ -396,7 +434,14 @@ export default function PatientDashboard() {
 
   if (loadingChats) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -420,7 +465,10 @@ export default function PatientDashboard() {
           >
             <MenuIcon />
           </IconButton>
-          <ButtonBase onClick={() => router.push('/')} sx={{ textTransform: 'none', color: theme.palette.common.white }}>
+          <ButtonBase
+            onClick={() => router.push('/')}
+            sx={{ textTransform: 'none', color: theme.palette.common.white }}
+          >
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
               Telemedicine App
             </Typography>
@@ -469,55 +517,49 @@ export default function PatientDashboard() {
                 </IconButton>
               </Tooltip>
             </Box>
-            {loadingChats ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <List>
-                {chats.map((chat) => (
-                  <ListItem
-                    key={chat.id}
-                    button
-                    selected={chat.id === selectedChatId}
-                    onClick={() => handleSelectChat(chat.id, chat.name)}
-                    sx={{
-                      mb: 1,
-                      borderRadius: '10px',
-                      backgroundColor: chat.id === selectedChatId ? '#e0f7fa' : '#f0f0f0',
-                      '&:hover': {
-                        backgroundColor: '#FFF4F2',
-                      },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      p: 2,
+            <List>
+              {chats.map((chat) => (
+                <ListItem
+                  key={chat.id}
+                  button
+                  selected={chat.id === selectedChatId}
+                  onClick={() => handleSelectChat(chat.id, chat.name)}
+                  sx={{
+                    mb: 1,
+                    borderRadius: '10px',
+                    backgroundColor: chat.id === selectedChatId ? '#e0f7fa' : '#f0f0f0',
+                    '&:hover': {
+                      backgroundColor: '#FFF4F2',
+                    },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    p: 2,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
+                      {chat.name}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                      {chat.messages.length > 0
+                        ? chat.messages[chat.messages.length - 1].content
+                        : 'No messages yet'}
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteChat(chat.id);
                     }}
+                    edge="end"
+                    color="error"
                   >
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                      <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                        {chat.name}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                        {chat.messages.length > 0
-                          ? chat.messages[chat.messages.length - 1].content
-                          : 'No messages yet'}
-                      </Typography>
-                    </Box>
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteChat(chat.id);
-                      }}
-                      edge="end"
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItem>
-                ))}
-              </List>
-            )}
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItem>
+              ))}
+            </List>
           </Box>
         </Drawer>
 
@@ -607,20 +649,22 @@ export default function PatientDashboard() {
                   onKeyDown={handleKeyDown}
                   multiline
                   maxRows={4}
+                 // disabled={isDoctorRequested} // Disable input if doctor is active
+                  helperText={isDoctorRequested ? 'A real doctor will assist you shortly.' : ''}
                 />
                 <Button
                   variant="contained"
                   color="primary"
                   onClick={sendMessage}
-                  disabled={isLoading}
+                 // disabled={isLoading || isDoctorRequested} // Disable send button if doctor is active
                 >
                   Send
                 </Button>
                 <Button
                   variant="outlined"
-                  color="secondary"
+                  color="error"
                   startIcon={<SaveIcon />}
-                  onClick={summarizeConversation}
+                  onClick={talkToRealDoctor}
                   disabled={isLoading || messages.length === 0}
                 >
                   Talk to a Real Doctor
