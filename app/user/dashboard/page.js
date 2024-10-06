@@ -5,13 +5,11 @@ import {
   Box,
   Button,
   Stack,
-  Container,
   Typography,
   AppBar,
   Toolbar,
   List,
   ListItem,
-  ListItemText,
   ButtonBase,
   Drawer,
   IconButton,
@@ -156,7 +154,7 @@ export default function PatientDashboard() {
         userId: user.uid,
         name: `Chat ${chats.length + 1}`,
         messages: [
-          { role: 'doctor', content: 'Hello, what brings you in today?' },
+          { role: 'assistant', content: 'Hello, what brings you in today?' }, // Changed 'doctor' to 'assistant' for consistency
         ],
         createdAt: serverTimestamp(),
       });
@@ -174,7 +172,7 @@ export default function PatientDashboard() {
   };
 
   const sendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim()) return; // Prevent sending empty messages
     if (!selectedChatId) {
       setSnackbarMessage('Please select or create a chat first.');
       setSnackbarSeverity('warning');
@@ -183,60 +181,58 @@ export default function PatientDashboard() {
     }
 
     const userMessage = { role: 'user', content: message };
-    const doctorMessage = { role: 'doctor', content: '' };
-
-    setMessages((prevMessages) => [...prevMessages, userMessage, doctorMessage]);
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
     setMessage('');
     setIsLoading(true);
 
     try {
-      // Call OpenAI API
-      const response = await fetch('/api/chat', {  // You'll need to create this API route
+      // Send the message to the API endpoint
+      const response = await fetch('/api/chat', { // Ensure the correct API route
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           messages: [...messages, userMessage].map(msg => ({
-            role: msg.role === 'doctor' ? 'assistant' : 'user',
+            role: msg.role === 'assistant' ? 'assistant' : 'user', // Ensure roles align with route.js expectations
             content: msg.content
           }))
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get response from OpenAI');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Assistant Response:', data.message);
+
+        const assistantMessage = { role: 'assistant', content: data.message };
+        // Update the messages state
+        setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+
+        // Update Firestore with the new messages
+        const chatDocRef = doc(db, 'chats', selectedChatId);
+        await updateDoc(chatDocRef, {
+          messages: [...messages, userMessage, assistantMessage],
+        });
+      } else {
+        const errorData = await response.json();
+        console.error('Error from API:', errorData.error);
+        setSnackbarMessage('Error from assistant: ' + errorData.error);
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+        // Optionally, add an error message to the chat
+        const errorAssistantMessage = { role: 'assistant', content: 'Sorry, something went wrong.' };
+        setMessages((prevMessages) => [...prevMessages, errorAssistantMessage]);
       }
-
-      const data = await response.json();
-      const aiResponse = data.message;
-
-      // Update the doctor's message in the state
-      setMessages((prevMessages) => {
-        const updatedMessages = [...prevMessages];
-        const lastDoctorIndex = updatedMessages
-          .map((msg) => msg.role)
-          .lastIndexOf('doctor');
-        if (lastDoctorIndex !== -1) {
-          updatedMessages[lastDoctorIndex].content = aiResponse;
-        }
-        return updatedMessages;
-      });
-
-      // Update Firestore with the new messages
-      const chatDocRef = doc(db, 'chats', selectedChatId);
-      await updateDoc(chatDocRef, {
-        messages: [...messages, userMessage, { role: 'doctor', content: aiResponse }],
-      });
     } catch (error) {
       console.error('Failed to send message:', error);
       setMessages((prevMessages) => {
         const updatedMessages = [...prevMessages];
-        const lastDoctorIndex = updatedMessages
+        // Find the last assistant message to update with error
+        const lastAssistantIndex = updatedMessages
           .map((msg) => msg.role)
-          .lastIndexOf('doctor');
-        if (lastDoctorIndex !== -1) {
-          updatedMessages[lastDoctorIndex].content = 'Sorry, something went wrong.';
+          .lastIndexOf('assistant');
+        if (lastAssistantIndex !== -1) {
+          updatedMessages[lastAssistantIndex].content = 'Sorry, something went wrong.';
         }
         return updatedMessages;
       });
@@ -247,6 +243,103 @@ export default function PatientDashboard() {
       setIsLoading(false);
     }
   };
+
+  const summarizeConversation = async () => {
+    if (!selectedChatId) {
+      setSnackbarMessage('Please select a chat first.');
+      setSnackbarSeverity('warning');
+      setSnackbarOpen(true);
+      return;
+    }
+  
+    if (messages.length === 0) {
+      setSnackbarMessage('No messages to summarize.');
+      setSnackbarSeverity('warning');
+      setSnackbarOpen(true);
+      return;
+    }
+  
+    setIsLoading(true);
+  
+    try {
+      // Prepare the summary and issueTitle prompt
+      const summaryPrompt = 'Please summarize the conversation so far to be reviewed by a doctor and provide a brief 2-3 word issue title in the following JSON format:\n{\n  "summary": "Your summary here.",\n  "issueTitle": "Title here"\n}';
+  
+      // Create a summary message
+      const summaryMessage = { role: 'user', content: summaryPrompt };
+  
+      // Send the summary prompt to the API
+      const response = await fetch('/api/chat', { // Ensure the correct API route
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, summaryMessage].map(msg => ({
+            role: msg.role === 'assistant' ? 'assistant' : 'user',
+            content: msg.content
+          }))
+        }),
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Summary Response:', data.message);
+  
+        const aiResponse = data.message;
+  
+        // Parse the summary and issueTitle
+        let summary = '';
+        let issueTitle = '';
+  
+        try {
+          const parsedResponse = JSON.parse(aiResponse);
+          summary = parsedResponse.summary || '';
+          issueTitle = parsedResponse.issueTitle || '';
+        } catch (parseError) {
+          console.error('Error parsing AI response:', parseError);
+          // Fallback if parsing fails
+          summary = aiResponse;
+          issueTitle = 'No Title';
+        }
+  
+        // Upload the summary and issueTitle to Firebase under 'userSummaries'
+        const user = auth.currentUser;
+        if (!user) {
+          setSnackbarMessage('User not authenticated.');
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+          return;
+        }
+  
+        await addDoc(collection(db, 'userSummaries'), {
+          userId: user.uid,
+          chatId: selectedChatId,
+          summary: summary,
+          issueTitle: issueTitle,
+          createdAt: serverTimestamp(),
+        });
+  
+        setSnackbarMessage('Conversation summary uploaded successfully!');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+      } else {
+        const errorData = await response.json();
+        console.error('Error from API:', errorData.error);
+        setSnackbarMessage('Error summarizing conversation: ' + errorData.error);
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    } catch (error) {
+      console.error('Error summarizing conversation:', error);
+      setSnackbarMessage('Error summarizing conversation: ' + error.message);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -300,6 +393,14 @@ export default function PatientDashboard() {
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
+
+  if (loadingChats) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <>
@@ -461,11 +562,11 @@ export default function PatientDashboard() {
                   <Box
                     key={index}
                     display="flex"
-                    justifyContent={msg.role === 'doctor' ? 'flex-start' : 'flex-end'}
+                    justifyContent={msg.role === 'assistant' ? 'flex-start' : 'flex-end'}
                     mb={0.5} // Reduced margin-bottom for closer messages
                   >
                     <Box
-                      bgcolor={msg.role === 'doctor' ? 'primary.main' : 'secondary.main'}
+                      bgcolor={msg.role === 'assistant' ? 'primary.main' : 'secondary.main'}
                       color="white"
                       borderRadius={2}
                       p={2}
@@ -496,7 +597,7 @@ export default function PatientDashboard() {
               </Box>
 
               {/* Input Area */}
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                 <TextField
                   label="Message"
                   variant="outlined"
@@ -514,6 +615,15 @@ export default function PatientDashboard() {
                   disabled={isLoading}
                 >
                   Send
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  startIcon={<SaveIcon />}
+                  onClick={summarizeConversation}
+                  disabled={isLoading || messages.length === 0}
+                >
+                  Talk to a Real Doctor
                 </Button>
               </Box>
             </Stack>
