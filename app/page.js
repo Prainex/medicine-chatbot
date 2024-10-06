@@ -92,7 +92,7 @@ export default function Home() {
       
       <Box
       sx={{
-        backgroundImage: 'url(https://github.com/Prainex/medicine-chatbot/blob/main/public/images/iStock-1255213445.jpg)',
+        backgroundImage: 'url(https://raw.githubusercontent.com/Prainex/medicine-chatbot/44250c31c5119dec475cd526fb8cd46118ba051d/public/images/iStock-1255213445.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         width: '100vw',
