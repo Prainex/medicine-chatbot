@@ -19,6 +19,7 @@ export default function Home() {
   const MenuClose = () => {setAnchorEl(null);}
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
     {/* Navigation Bar */}
       <AppBar position="static" sx ={{ backgroundColor: 'white'}}>
         <Toolbar>
@@ -27,7 +28,8 @@ export default function Home() {
               Telemedicine App
             </Typography>
           </ButtonBase>
-
+        
+        {/*Login button*/}
           <Button 
           sx = {{ color : 'red', 
             marginLeft : 'auto',
@@ -37,10 +39,18 @@ export default function Home() {
             height: '50px', 
             border: '2px solid red',
             borderRadius: '8px',
-            marginRight: '16px'}}
+            marginRight: '16px',
+            transition: 'transform 0.3s ease', // Smooth transition effect
+            '&:hover': {
+              transform: 'scale(1.1)', // Zoom in by 10% when hovered
+            }
+          }}
           onClick={() => router.push('/login')  }>
             Login
           </Button>
+
+          {/*Sign Up button*/}
+
           <Button 
           sx = {{ color : 'red',
             padding: '12px 24px', 
@@ -50,6 +60,10 @@ export default function Home() {
             border: '2px solid red',
             borderRadius: '8px',
             marginLeft: '16px',
+            transition: 'transform 0.3s ease', // Smooth transition effect
+            '&:hover': {
+            transform: 'scale(1.1)', // Zoom in by 10% when hovered
+      }
            }}
           onClick={() => router.push('/signup')}>
             Sign Up
@@ -62,6 +76,7 @@ export default function Home() {
           sx ={{ color: 'red', ml : 2}}
           >
 
+          {/*Drop down menu*/}
             <MenuIcon/>
             </IconButton>
             <Menu
@@ -103,18 +118,51 @@ export default function Home() {
       }}
       > 
 
-      <Container sx={{ textAlign: 'center', mt: 5}}>
-        <Typography variant="h3" gutterBottom>
-          Welcome to Our Telemedicine App
+      <Container sx={{ textAlign: 'center', 
+        position: 'relative', 
+        zIndex: 2,  
+        textAlign: 'center',
+        mt: 5 
+      }}>
+
+        {/*Text in the Middle*/}
+        <Typography 
+        variant="h2" 
+        gutterBottom
+        sx={{
+        color: 'black',  // Set inner text color to black
+        WebkitTextStroke: '2px white',  // White outline (2px thick)
+        fontWeight: 'bold',  // Optional: Makes text bold
+        }}      
+        >
+        Health Support Wherever You Are
         </Typography>
-        <Typography variant="h5" align="center" paragraph>
+        <Typography variant="h5" 
+        align="center"
+        sx={{ color: 'white' }}
+          >
           Providing AI-powered medical advice and access to real doctors.
         </Typography>
         <div style={{ textAlign: 'center' }}>
-          <Button variant="contained" color="primary" onClick={() => router.push('/signup')}>
-            Get Started
-          </Button>
-        </div>
+
+          {/*Chat now*/}
+  <Button 
+    variant="contained" 
+    color="primary" 
+    onClick={() => router.push('/signup')}
+    sx={{
+      padding: '16px 32px', // Increase padding to make the button bigger
+      fontSize: '18px',      // Increase font size for bigger text
+      marginTop: '20px',     // Move the button lower
+      transition: 'transform 0.3s ease', // Smooth transition effect
+      '&:hover': {
+        transform: 'scale(1.1)', // Zoom in by 10% when hovered
+      },
+    }}
+  >
+    Chat Now
+  </Button>
+</div>
       </Container>
       </Box>
       </Box>
