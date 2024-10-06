@@ -150,16 +150,59 @@ export default function PatientDashboard() {
           </Drawer>
   
           {/* Main Content */}
-          <Box sx={{ flexGrow: 1, mt: 8, overflowY: 'auto' }}>
-            <Container sx={{ textAlign: 'center', mt: 0 }}>
-              <Typography variant="h4" gutterBottom>
-                Welcome to Your Dashboard
-              </Typography>
-              <Typography variant="body1">
-                Here you can manage your profile, speak to patients, and more.
-              </Typography>
-            </Container>
-          </Box>
+          <Box sx={{ mt: 4, width: '100%' }}>
+    <Typography variant="h5" gutterBottom sx={{ textAlign: 'center' }}>
+        Welcome, Dr. Name.
+    </Typography>
+  <Paper elevation={1} sx={{ p: 2, width: '100%' }}>
+    {/* Header for the table */}
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 2,
+        p: 2,
+        backgroundColor: '#f5f5f5',
+        borderRadius: '8px',
+        width: '100%',
+      }}
+    >
+      <Typography variant="subtitle1" fontWeight="bold">Type of Issue</Typography>
+      <Typography variant="subtitle1" fontWeight="bold">AI Summary</Typography>
+      <Typography variant="subtitle1" fontWeight="bold">Date</Typography>
+    </Box>
+
+    {/* Data Rows */}
+    {[ // Example issues array to simulate data
+      { issue: "Consultation", summary: "AI suggests further tests", date: "2024-10-06" },
+      { issue: "Diagnosis", summary: "AI confirms diagnosis", date: "2024-10-05" },
+      { issue: "Follow-up", summary: "AI recommends another appointment", date: "2024-10-04" }
+    ].map((item, index) => (
+      <Paper
+        key={index}
+        elevation={3}
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 2,
+          p: 2,
+          my: 1,
+          borderRadius: '8px',
+          '&:hover': {
+            backgroundColor: '#e0f7fa',
+          },
+          width: '100%', // Make sure the rows fill the full width
+        }}
+      >
+        <Typography variant="body1">{item.issue}</Typography>
+        <Typography variant="body2" color="textSecondary">{item.summary}</Typography>
+        <Typography variant="caption" color="textSecondary">{item.date}</Typography>
+      </Paper>
+    ))}
+  </Paper>
+</Box>
+
+
         </Box>
       </>
     );
