@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React, { useState, useEffect } from 'react';
 import { 
     Container, Typography, AppBar, Toolbar, Button, Box, TextField, Paper, 
@@ -26,6 +26,8 @@ export default function ProfilePage() {
     const [snackbarSeverity, setSnackbarSeverity] = useState('success'); // Snackbar severity
 
     const initialProfile = {
+        firstName: '', // New field
+        lastName: '',  // New field
         email: '',
         gender: '',
         dateOfBirth: '',
@@ -243,6 +245,22 @@ export default function ProfilePage() {
                             </Box>
 
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <TextField
+                                    label="First Name" // Added first name field
+                                    value={profile.firstName}
+                                    onChange={handleChange('firstName')}
+                                    disabled={!isEditing}
+                                    fullWidth
+                                />
+
+                                <TextField
+                                    label="Last Name" // Added last name field
+                                    value={profile.lastName}
+                                    onChange={handleChange('lastName')}
+                                    disabled={!isEditing}
+                                    fullWidth
+                                />
+
                                 <TextField
                                     label="Email"
                                     value={profile.email}

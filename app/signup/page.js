@@ -65,6 +65,8 @@ export default function SignUp() {
 
   const formik = useFormik({
     initialValues: {
+      firstName: "", // Added First Name
+      lastName: "", // Added Last Name
       email: "",
       password: "",
       confirmPassword: "",
@@ -75,6 +77,8 @@ export default function SignUp() {
       specialization: "", // New field for specialization
     },
     validationSchema: Yup.object({
+      firstName: Yup.string().required("First Name is required"), // Validation for First Name
+      lastName: Yup.string().required("Last Name is required"), // Validation for Last Name
       email: Yup.string().email("Invalid email").required("Required"),
       password: Yup.string()
         .min(6, "Password must be at least 6 characters")
@@ -104,6 +108,8 @@ export default function SignUp() {
         const userId = userCredential.user.uid;
 
         const userData = {
+          firstName: values.firstName, // Added First Name
+          lastName: values.lastName,   // Added Last Name
           accountType,
           gender: values.gender,
           dateOfBirth: values.dateOfBirth,
@@ -234,6 +240,36 @@ export default function SignUp() {
 
             {/* Sign-Up Form */}
             <form onSubmit={formik.handleSubmit} noValidate>
+              {/* First Name Field */}
+              <TextField
+                fullWidth
+                margin="normal"
+                label="First Name"
+                name="firstName"
+                variant="outlined"
+                value={formik.values.firstName}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.firstName && Boolean(formik.errors.firstName)}
+                helperText={formik.touched.firstName && formik.errors.firstName}
+                aria-label="First Name"
+              />
+
+              {/* Last Name Field */}
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Last Name"
+                name="lastName"
+                variant="outlined"
+                value={formik.values.lastName}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.lastName && Boolean(formik.errors.lastName)}
+                helperText={formik.touched.lastName && formik.errors.lastName}
+                aria-label="Last Name"
+              />
+
               {/* Email Field */}
               <TextField
                 fullWidth
