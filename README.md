@@ -46,7 +46,7 @@ Our goal is to reduce patient wait times, provide accessible healthcare advice 2
 ## 📷 Screenshots
 ![Landing Page](https://github.com/user-attachments/assets/49edfe61-3865-4f89-94b2-56c6494ac315)
 
-*The doctor dashboard where healthcare providers can view summarized conversations and engage with patients.*
+*Our landing page!*
 
 
 
