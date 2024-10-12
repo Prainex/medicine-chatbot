@@ -174,7 +174,7 @@ Contributions are welcome! If you'd like to help improve this project, please fo
 
 If you have any questions or want to get involved, feel free to contact us at:
 
-- **GitHub**: [@Prainex](https://github.com/Prainex)
+- **GitHub**: [@Arvind](https://github.com/Prainex)
 - **GitHub**: [@Hamza](https://github.com/hamzapatwa)
 - **GitHub**: [@Mehtab](https://github.com/mehtabmahir)
 - **GitHub**: [@Phoenix](https://github.com/FeeNixPYK)
